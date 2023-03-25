@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Installer>
+    <Name>ObjectTrackingDemo</Name>
+    <Version>1.0.0</Version>
+    <Title>ObjectTrackingDemo安装向导</Title>
+    <Publisher>Spring</Publisher>
+    <!-- Directory name is used in component.xml -->
+    <StartMenuDir>ObjectTrackingDemo</StartMenuDir>
+    <TargetDir>@ApplicationsDir@/ObjectTrackingDemo</TargetDir>
+</Installer>

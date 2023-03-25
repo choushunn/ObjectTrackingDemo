@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Package>
+    <DisplayName>ObjectTrackingDemo</DisplayName>
+    <Description>A ObjectTrackingDemo accessible through a start menu entry.</Description>
+    <Version>1.0.1-1</Version>
+    <ReleaseDate>2023-03-22</ReleaseDate>
+    <Default>true</Default>
+    <Script>installscript.qs</Script>
+</Package>

@@ -1,0 +1,1 @@
+D:\Programs\Qt\Tools\QtIFW-4.5.2\bin\binarycreator.exe -c config/config.xml -p .\packges\ ObjectTrackingDemo.exe
