@@ -18,7 +18,7 @@ set(CMAKE_AUTORCC ON)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
+set(CMAKE_INSTALL_PREFIX install)
 if(CMAKE_SYSTEM_NAME MATCHES "Windows")
     set(OpenCV_DIR "${THIRD_PARTY_LIB_PATH}/opencv")
 elseif(CMAKE_SYSTEM_NAME MATCHES "Linux")
@@ -27,6 +27,7 @@ elseif(CMAKE_SYSTEM_NAME MATCHES "Linux")
     #设置OnnxRuntime
     set(OnnxRuntime_DIR "${THIRD_PARTY_LIB_PATH}/onnxruntime-gpu")
 endif()
+
 #设置ToupCam_DIR和ToupCamConfig
 set(ToupCam_DIR "${THIRD_PARTY_LIB_PATH}/toupcam")
 #ncnn
@@ -35,13 +36,14 @@ set(ncnn_DIR "${THIRD_PARTY_LIB_PATH}/ncnn/x64/lib/cmake/ncnn")
 #导入第三方库
 find_package(OpenCV REQUIRED)
 find_package(ToupCam REQUIRED)
+
 if(CMAKE_SYSTEM_NAME MATCHES "Windows")
     find_package(ncnn REQUIRED)
     include_directories("${THIRD_PARTY_LIB_PATH}/ncnn/x64/include")
-
 elseif(CMAKE_SYSTEM_NAME MATCHES "Linux")
 #    find_package(OnnxRuntime REQUIRED)
 endif()
+
 #导入Qt库
 find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets LinguistTools)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets LinguistTools)
@@ -115,7 +117,14 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
 
 install(TARGETS ${PROJECT_NAME}
     BUNDLE DESTINATION .
-    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    RUNTIME DESTINATION bin
+    PUBLIC_HEADER DESTINATION include
+)
+
+message(${CMAKE_INSTALL_PREFIX})
+install(DIRECTORY  ${PROJECT_SOURCE_DIR}/models/ DESTINATION models)
 
 if(QT_VERSION_MAJOR EQUAL 6)
     qt_finalize_executable(${PROJECT_NAME})
