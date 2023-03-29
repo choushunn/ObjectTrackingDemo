@@ -33,11 +33,11 @@ AppInit::AppInit(Ui::MainWindow *ui)
     //TODO:摄像头初始化
     initCamera();
     //TODO:串口初始化
-   initSerialPort();
+    initSerialPort();
     //TODO:WebSocket初始化
-    initWebSocket();
+//    initWebSocket();
     //TODO:Onnx初始化
-    initOnnx();
+//    initOnnx();
     //TODO:Ncnn初始化
     initNcnn();
     //相机类型切换检测
@@ -104,10 +104,10 @@ void AppInit::initCamera()
         mainwindowUi->m_cbx_camera_list->setDisabled(false);
         mainwindowUi->m_btn_open_camera->setDisabled(false);
         m_cameraIndex = mainwindowUi->m_cbx_camera_list->currentIndex();
-//        appThread = new QThread();
+        //        appThread = new QThread();
         webCamera = new CUSBCamera(m_cameraIndex);
-//        camera->moveToThread(appThread);
-//        appThread->start();
+        //        camera->moveToThread(appThread);
+        //        appThread->start();
     }
     qDebug() << "AppInit:USB摄像头初始化完成." << "检测到"<< m_cameraList.count() << "个USB摄像头.";
 }
@@ -186,6 +186,7 @@ void AppInit::initSerialPort()
     mainwindowUi->m_lbl_slider2_value->setText(QString::number(mainwindowUi->m_slder_steer2->value()));
     mainwindowUi->statusbar->showMessage("Ready");
     qDebug() << "AppInit:串口初始化完成." << "检测到"<< serialPortInfos.count() <<"个串口.";
+    mainwindowUi->m_cbx_ip_list->addItem("127.0.0.1");
 }
 
 
@@ -196,13 +197,19 @@ void AppInit::initSerialPort()
 void AppInit::initWebSocket()
 {
     //显示可用IP
-    mainwindowUi->m_cbx_ip_list->addItem("127.0.0.1");
+//    mainwindowUi->m_cbx_ip_list->addItem("127.0.0.1");
     //默认端口
-    mainwindowUi->m_line_port->setText("10086");
     quint32  port = mainwindowUi->m_line_port->text().toInt();
     webSocket = new CWebSocket(port);
+    connect(webSocket,&CWebSocket::sendTextMessage, this, &AppInit::showTextMessage);
     //检测是否打开
     qDebug() << "AppInit:WebSocket初始化完成.";
+}
+
+void AppInit::showTextMessage(const QString &message){
+    QDateTime dateTime= QDateTime::currentDateTime();//获取系统当前的时间
+    QString dataTimeStr = dateTime .toString("hh:mm:ss");//格式化时间
+    mainwindowUi->textBrowser2->append(dataTimeStr+"-->"+message);
 }
 
 /**
@@ -211,11 +218,11 @@ void AppInit::initWebSocket()
  */
 void AppInit::initOnnx()
 {
-//    nc = new CNcnn();
-//    appThread = new QThread();
-//    nc->moveToThread(appThread);
-//    appThread->start();
-//    qDebug() << "AppInit:Onnx初始化完成.";
+    //    nc = new CNcnn();
+    //    appThread = new QThread();
+    //    nc->moveToThread(appThread);
+    //    appThread->start();
+    //    qDebug() << "AppInit:Onnx初始化完成.";
 }
 
 
@@ -226,9 +233,9 @@ void AppInit::initOnnx()
 void AppInit::initNcnn()
 {
     ncnnYolo = new CNcnn();
-//    appThread = new QThread();
-//    nc->moveToThread(appThread);
-//    appThread->start();
+    //    appThread = new QThread();
+    //    nc->moveToThread(appThread);
+    //    appThread->start();
     qDebug() << "AppInit:Ncnn初始化完成.";
 }
 

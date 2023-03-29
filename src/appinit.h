@@ -37,18 +37,22 @@ private:
     QList<QCameraDevice> m_cameraList;
     int m_cameraIndex;
 
+public:
+    void initWebSocket();
+
 private:
     void initMainWindowUI();
     void initCamera();
     void initToupCamera();
     void initSerialPort();
-    void initWebSocket();
+
     void initOnnx();
     void initNcnn();
 
 signals:
 
-private slots:
+public slots:
+    void showTextMessage(const QString &message);
 
 
 };

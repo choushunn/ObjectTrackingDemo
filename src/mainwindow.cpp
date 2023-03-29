@@ -33,37 +33,37 @@ void MainWindow::on_m_btn_open_camera_clicked(bool checked)
 {
     if(checked){
         ui->m_btn_open_camera->setText("关闭");
-        if(ui->m_cbx_camera_type->currentText()=="USB"){
+        //1s读10帧
+//        fps = ui->lineEdit_FPS->text().toInt();
+        m_timer->setInterval(int(1000/fps));
+        connect(appInit->ncnnYolo, &CNcnn::sendDectectImage, this, &::MainWindow::showFrame);
+        if(ui->m_cbx_camera_type->currentText() == "USB"){
             appInit->webCamera->open();
-            //1s读10帧
-            int fps = 40;
-//            m_timer->start(int(1000/fps));
-            m_timer->setInterval(int(1000/fps));
-//            app_init->appThread->start();
+            m_timer->start();
             //读取帧
             connect(m_timer, &QTimer::timeout, appInit->webCamera, &CUSBCamera::read);
-            m_timer->start();
             //处理帧
-//            connect(app_init->web_camera, &CUSBCamera::sendFrame, appEvent, &AppEvent::processFrame);
+            //connect(app_init->web_camera, &CUSBCamera::sendFrame, appEvent, &AppEvent::processFrame);
             connect(appInit->webCamera, &CUSBCamera::sendFrame, appInit->ncnnYolo, &CNcnn::detect);
-
             //显示帧
-//            connect(appEvent, &AppEvent::sendProcessFrame, this, &MainWindow::showFrame);
-            connect(appInit->ncnnYolo, &CNcnn::sendDectectImage, this, &::MainWindow::showFrame);
+            //connect(appEvent, &AppEvent::sendProcessFrame, this, &MainWindow::showFrame);
         }
-        else if(ui->m_cbx_camera_type->currentText()=="TOUP")
+        else if(ui->m_cbx_camera_type->currentText() == "TOUP")
         {
-            //读取帧
+            //打开摄像头
             appInit->toupCamera->open();
+            m_timer->start();
+            //读取帧
+            connect(m_timer, &QTimer::timeout, appInit->toupCamera, &CToupCamera::read);
+            //处理帧
+            connect(appInit->toupCamera, &CToupCamera::sendFrame, appInit->ncnnYolo, &CNcnn::detect);
             //显示帧
-            connect(appInit->toupCamera, &CToupCamera::sendImage, this, &::MainWindow::showFrame);
+            //connect(appInit->toupCamera, &CToupCamera::sendImage, this, &::MainWindow::showFrame);
         }
     }
     else
     {
         if(ui->m_cbx_camera_type->currentText()=="USB"){
-//            app_init->appThread->quit();
-//            app_init->appThread->wait();
             m_timer->stop();
             appInit->webCamera->close();
         }else if(ui->m_cbx_camera_type->currentText()=="TOUP")
@@ -110,7 +110,17 @@ void MainWindow::on_m_btn_open_serial_port_clicked(bool checked)
  */
 void MainWindow::on_m_btn_open_web_socket_clicked()
 {
-    appInit->webSocket->startListen();
+    if(!appInit->webSocket){
+        appInit->initWebSocket();
+        appInit->webSocket->startListen();
+        ui->m_btn_open_web_socket->setText("关闭");
+    }
+    else
+    {
+        appInit->webSocket->disconnect();
+        ui->m_btn_open_web_socket->setText("打开");
+    }
+
 }
 
 /**
@@ -119,7 +129,7 @@ void MainWindow::on_m_btn_open_web_socket_clicked()
  */
 void MainWindow::showFrame(QImage image)
 {
-//    qDebug() << "MainWindow:3.show frame.";
+    //    qDebug() << "MainWindow:3.show frame.";
     QImage new_image = image.scaled(ui->m_lbl_display->width(), ui->m_lbl_display->height(), Qt::KeepAspectRatio, Qt::FastTransformation);
     ui->m_lbl_display->setPixmap(QPixmap::fromImage(new_image));
 }

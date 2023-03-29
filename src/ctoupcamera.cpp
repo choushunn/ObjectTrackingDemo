@@ -21,7 +21,7 @@ CToupCamera::CToupCamera(ToupcamDeviceV2 cur, QObject *parent)
             if (TOUPCAM_EVENT_IMAGE == nEvent)
             {
                 //读取图像
-                read();
+//                read();
             }
             else if(TOUPCAM_EVENT_EXPOSURE == nEvent)
             {
@@ -137,10 +137,12 @@ void CToupCamera::open(){
  */
 void CToupCamera::read()
 {
-    ToupcamFrameInfoV2* pInfo;
+    pInfo=new ToupcamFrameInfoV2();
     if(SUCCEEDED(Toupcam_PullImageV2(m_hcam, m_pData, 24, pInfo))){
-        QImage image(m_pData, pInfo->width, pInfo->height, QImage::Format_RGB888);
-        emit sendImage(image);
+//        QImage image(m_pData, pInfo->width, pInfo->height, QImage::Format_RGB888);
+        //        emit sendImage(image);
+        cv::Mat frame(pInfo->height,pInfo->width, CV_8UC3, m_pData);
+        emit sendFrame(frame);
     }
 }
 

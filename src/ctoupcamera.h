@@ -26,10 +26,11 @@ private:
     unsigned        m_imgWidth;
     unsigned        m_imgHeight;
     static void __stdcall eventCallBack(unsigned nEvent, void* pCallbackCtx);
-
+    ToupcamFrameInfoV2* pInfo;
 signals:
     void evtCallback(unsigned nEvent);
     void sendImage(QImage image);
+    void sendFrame(cv::Mat frame);
 };
 
 #endif // CTOUPCAMERA_H

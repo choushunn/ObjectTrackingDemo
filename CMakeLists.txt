@@ -55,7 +55,8 @@ find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Concurrent)
 set(TS_FILES ${PROJECT_NAME}_zh_CN.ts)
 
 #自动寻找源文件
-aux_source_directory(${PROJECT_SOURCE_DIR}/src SRC_LIST)
+#aux_source_directory(${PROJECT_SOURCE_DIR}/src SRC_LIST)
+FILE(GLOB_RECURSE SRC_LIST "${PROJECT_SOURCE_DIR}/src/*.cpp")
 #匹配寻找头文件
 FILE(GLOB_RECURSE HEADER_LIST "${PROJECT_SOURCE_DIR}/src/*.h")
 #匹配寻找头文件
@@ -65,6 +66,7 @@ set(PROJECT_SOURCES
     ${HEADER_LIST}
     ${SRC_LIST}
     ${UI_LIST}
+    src/mainwindow.ui
     ${TS_FILES}
     logo.rc
 )

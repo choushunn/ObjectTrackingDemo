@@ -107,4 +107,5 @@ void CWebSocket::socketDisconnected()
         m_clients.removeAll(pClient);
         pClient->deleteLater();
     }
+    m_webSocketServer->close();
 }
