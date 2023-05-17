@@ -75,7 +75,7 @@ set(PROJECT_SOURCES
         ${SRC_FILES}
         ${TS_FILES}
         ${UI_FILES}
-        logo.rc
+        resources/logo.rc
     )
 
 
