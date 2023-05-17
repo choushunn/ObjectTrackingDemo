@@ -32,10 +32,11 @@ endif()
 set(ToupCam_DIR "${THIRD_PARTY_LIB_PATH}/toupcam")
 #ncnn
 set(ncnn_DIR "${THIRD_PARTY_LIB_PATH}/ncnn/x64/lib/cmake/ncnn")
-
+set(OnnxRuntime_DIR "${THIRD_PARTY_LIB_PATH}/onnxruntime-win-x64-gpu-1.14.1")
 #导入第三方库
 find_package(OpenCV REQUIRED)
 find_package(ToupCam REQUIRED)
+find_package(OnnxRuntime REQUIRED)
 
 if(CMAKE_SYSTEM_NAME MATCHES "Windows")
     find_package(ncnn REQUIRED)
@@ -51,25 +52,32 @@ find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS SerialPort)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS WebSockets)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Multimedia)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Concurrent)
-#翻译文件
-set(TS_FILES ${PROJECT_NAME}_zh_CN.ts)
 
-#自动寻找源文件
-#aux_source_directory(${PROJECT_SOURCE_DIR}/src SRC_LIST)
-FILE(GLOB_RECURSE SRC_LIST "${PROJECT_SOURCE_DIR}/src/*.cpp")
+# 设置头文件目录为include文件夹
+include_directories(include)
+
+# 设置自动生成的ui头文件的输出路径为include目录
+set(CMAKE_AUTOUIC_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include)
+# 设置ui文件搜索路径
+set(CMAKE_AUTOUIC_SEARCH_PATHS ${CMAKE_CURRENT_SOURCE_DIR}/ui)
+
 #匹配寻找头文件
-FILE(GLOB_RECURSE HEADER_LIST "${PROJECT_SOURCE_DIR}/src/*.h")
-#匹配寻找头文件
-FILE(GLOB_RECURSE UI_LIST "${PROJECT_SOURCE_DIR}/src/*.ui")
+FILE(GLOB_RECURSE HEADER_FILES "${PROJECT_SOURCE_DIR}/include/*.h")
+#匹配寻找源文件
+FILE(GLOB_RECURSE SRC_FILES "${PROJECT_SOURCE_DIR}/src/*.cpp")
+#匹配寻找UI文件
+FILE(GLOB_RECURSE UI_FILES "${PROJECT_SOURCE_DIR}/ui/*.ui")
+#翻译文件
+set(TS_FILES "translations/${PROJECT_NAME}_zh_CN.ts")
 
 set(PROJECT_SOURCES
-    ${HEADER_LIST}
-    ${SRC_LIST}
-    ${UI_LIST}
-    src/mainwindow.ui
-    ${TS_FILES}
-    logo.rc
-)
+        ${HEADER_FILES}
+        ${SRC_FILES}
+        ${TS_FILES}
+        ${UI_FILES}
+        logo.rc
+    )
+
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
     qt_add_executable(${PROJECT_NAME}

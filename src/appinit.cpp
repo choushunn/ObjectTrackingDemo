@@ -28,17 +28,17 @@ AppInit::AppInit()
 AppInit::AppInit(Ui::MainWindow *ui)
     :mainwindowUi(ui)
 {
-    //TODO:UI初始化
+    //UI初始化
     initMainWindowUI();
-    //TODO:摄像头初始化
+    //摄像头初始化
     initCamera();
-    //TODO:串口初始化
+    //串口初始化
     initSerialPort();
-    //TODO:WebSocket初始化
+    //WebSocket初始化
 //    initWebSocket();
-    //TODO:Onnx初始化
-//    initOnnx();
-    //TODO:Ncnn初始化
+    //Onnx初始化
+    initOnnx();
+    //Ncnn初始化
     initNcnn();
     //相机类型切换检测
     connect(mainwindowUi->m_cbx_camera_list, QOverload<int>::of(&QComboBox::currentIndexChanged), this, [this](int index)
@@ -218,11 +218,11 @@ void AppInit::showTextMessage(const QString &message){
  */
 void AppInit::initOnnx()
 {
-    //    nc = new CNcnn();
+    yolov8Onnx = new YoloV8Onnx();
     //    appThread = new QThread();
     //    nc->moveToThread(appThread);
     //    appThread->start();
-    //    qDebug() << "AppInit:Onnx初始化完成.";
+        qDebug() << "AppInit:Onnx初始化完成.";
 }
 
 

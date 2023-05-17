@@ -207,3 +207,11 @@ void MainWindow::on_m_slder_steer2_valueChanged(int value)
 
 
 
+
+void MainWindow::on_pushButton_clicked()
+{
+    this->fps = ui->lineEdit_FPS->text().toInt();
+    m_timer->setInterval(int(1000/fps));
+    qDebug() << "set fps: " << this->fps;
+}
+

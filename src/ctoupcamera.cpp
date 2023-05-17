@@ -14,14 +14,14 @@ CToupCamera::CToupCamera(ToupcamDeviceV2 cur, QObject *parent)
     {
         //todo:
         //热插拔设备检测
-//        qDebug() << "handleEvent" << nEvent;
+        //qDebug() << "handleEvent" << nEvent;
         //运行时事件
         if (m_hcam)
         {
             if (TOUPCAM_EVENT_IMAGE == nEvent)
             {
                 //读取图像
-//                read();
+                //read();
             }
             else if(TOUPCAM_EVENT_EXPOSURE == nEvent)
             {
@@ -120,6 +120,7 @@ void CToupCamera::open(){
         if (SUCCEEDED(Toupcam_StartPullModeWithCallback(m_hcam, eventCallBack, this)))
         {
             m_pData = new uchar[TDIBWIDTHBYTES(m_imgWidth * 24) * m_imgHeight];
+            pInfo = new ToupcamFrameInfoV2();
             qDebug()<<"CToupCamera:ToupCam打开成功.";
         }
         else
@@ -137,7 +138,6 @@ void CToupCamera::open(){
  */
 void CToupCamera::read()
 {
-    pInfo=new ToupcamFrameInfoV2();
     if(SUCCEEDED(Toupcam_PullImageV2(m_hcam, m_pData, 24, pInfo))){
 //        QImage image(m_pData, pInfo->width, pInfo->height, QImage::Format_RGB888);
         //        emit sendImage(image);
