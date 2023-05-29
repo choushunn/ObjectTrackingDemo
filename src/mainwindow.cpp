@@ -34,32 +34,36 @@ void MainWindow::on_m_btn_open_camera_clicked(bool checked)
     if(checked){
         ui->m_btn_open_camera->setText("关闭");
         //1s读10帧
-//        fps = ui->lineEdit_FPS->text().toInt();
+        //        fps = ui->lineEdit_FPS->text().toInt();
         m_timer->setInterval(int(1000/fps));
-        connect(appInit->ncnnYolo, &CNcnn::sendDectectImage, this, &::MainWindow::showFrame);
+        //        connect(appInit->ncnnYolo, &CNcnn::sendDectectImage, this, &::MainWindow::showFrame);
         if(ui->m_cbx_camera_type->currentText() == "USB"){
             appInit->webCamera->open();
+
             m_timer->start();
             //读取帧
             connect(m_timer, &QTimer::timeout, appInit->webCamera, &CUSBCamera::read);
             //处理帧
-            //connect(app_init->web_camera, &CUSBCamera::sendFrame, appEvent, &AppEvent::processFrame);
-            connect(appInit->webCamera, &CUSBCamera::sendFrame, appInit->ncnnYolo, &CNcnn::detect);
+            connect(appInit->webCamera, &CUSBCamera::sendFrame, appEvent, &AppEvent::processFrame);
+            //            connect(appInit->webCamera, &CUSBCamera::sendFrame, appInit->ncnnYolo, &CNcnn::detect);
             //显示帧
-            //connect(appEvent, &AppEvent::sendProcessFrame, this, &MainWindow::showFrame);
+            connect(appEvent, &AppEvent::sendProcessFrame, this, &MainWindow::showFrame);
         }
         else if(ui->m_cbx_camera_type->currentText() == "TOUP")
         {
-            //打开摄像头
+            //打开摄像头,判断是否打开成功
             appInit->toupCamera->open();
+
             m_timer->start();
             //读取帧
             connect(m_timer, &QTimer::timeout, appInit->toupCamera, &CToupCamera::read);
             //处理帧
-            connect(appInit->toupCamera, &CToupCamera::sendFrame, appInit->ncnnYolo, &CNcnn::detect);
+            //            connect(appInit->toupCamera, &CToupCamera::sendFrame, appInit->ncnnYolo, &CNcnn::detect);
             //显示帧
-            //connect(appInit->toupCamera, &CToupCamera::sendImage, this, &::MainWindow::showFrame);
+            connect(appInit->toupCamera, &CToupCamera::sendImage, this, &::MainWindow::showFrame);
         }
+        ui->m_cbx_camera_list->setDisabled(true);
+        ui->m_cbx_camera_type->setDisabled(true);
     }
     else
     {
@@ -72,6 +76,8 @@ void MainWindow::on_m_btn_open_camera_clicked(bool checked)
         }
         ui->m_btn_open_camera->setText("打开");
         ui->m_lbl_display->clear();
+        ui->m_cbx_camera_list->setDisabled(false);
+        ui->m_cbx_camera_type->setDisabled(false);
     }
 }
 
@@ -89,6 +95,7 @@ void MainWindow::on_m_btn_open_serial_port_clicked(bool checked)
         ui->m_slder_steer2->setDisabled(false);
         ui->m_btn_serial_port_send->setDisabled(false);
         ui->m_btn_search->setDisabled(false);
+        ui->m_cbx_serial_port_list->setDisabled(true);
     }
     else
     {
@@ -100,6 +107,7 @@ void MainWindow::on_m_btn_open_serial_port_clicked(bool checked)
         ui->m_btn_search->setDisabled(true);
         ui->m_slder_steer1->setSliderPosition(135);
         ui->m_slder_steer2->setSliderPosition(135);
+        ui->m_cbx_serial_port_list->setDisabled(false);
     }
 
 }
@@ -213,5 +221,79 @@ void MainWindow::on_pushButton_clicked()
     this->fps = ui->lineEdit_FPS->text().toInt();
     m_timer->setInterval(int(1000/fps));
     qDebug() << "set fps: " << this->fps;
+}
+
+/**
+ * @brief 退出
+ * @param
+ */
+void MainWindow::on_action_2_triggered()
+{
+    int ret = QMessageBox::warning(this, "退出", "是否退出程序", QMessageBox::Ok, QMessageBox::Cancel);
+    switch(ret)
+    {
+    case QMessageBox::Ok:
+        qDebug() <<"退出程序";
+        QApplication::quit();
+        break;
+    case QMessageBox::Cancel:
+        qDebug() <<"取消退出程序";
+        break;
+    default:
+        break;
+    }
+}
+
+
+void MainWindow::on_action_3_triggered()
+{
+    if(MainWindow::isFullScreen()){
+        MainWindow::showNormal();
+    }else{
+        MainWindow::showFullScreen();
+    }
+
+}
+
+
+void MainWindow::on_action_3_triggered(bool checked)
+{
+    //    if(checked){
+    //        MainWindow::showFullScreen();
+    //    }else{
+    //        MainWindow::showNormal();
+    //    }
+}
+
+
+void MainWindow::on_action_4_triggered()
+{
+    if(MainWindow::isMaximized()){
+        MainWindow::showNormal();
+    }else{
+        MainWindow::showMaximized();
+    }
+}
+
+
+void MainWindow::on_action_5_triggered()
+{
+
+    MainWindow::showNormal();
+
+}
+
+
+void MainWindow::on_action_triggered()
+{
+    QString path = QDir::currentPath();
+    QString fileName = QFileDialog::getOpenFileName(this, "选择一个文件", path,  "图像文件 (*.jpg *.png *.bmp)");
+
+    // 如果选择了文件，则加载图像文件并显示在标签控件中
+    if (!fileName.isEmpty())
+    {
+        QPixmap pixmap(fileName);
+        ui->m_lbl_display->setPixmap(pixmap);
+    }
 }
 

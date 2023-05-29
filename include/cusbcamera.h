@@ -13,6 +13,7 @@ class CUSBCamera : public QObject
     Q_OBJECT
 public:
     explicit CUSBCamera(int camIndex=0, QObject *parent = nullptr);
+//    explicit CUSBCamera(std::string camIndex=0, QObject *parent = nullptr);
     void open();
     void close();
 

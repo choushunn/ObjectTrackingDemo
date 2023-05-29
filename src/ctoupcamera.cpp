@@ -9,12 +9,13 @@ CToupCamera::CToupCamera(ToupcamDeviceV2 cur, QObject *parent)
     : QObject{parent}
     ,m_cur(cur)
 {
+    qDebug() << "cur.id" <<cur.id ;
     //全局事件响应
     connect(this, &CToupCamera::evtCallback, this, [this](unsigned nEvent)
     {
         //todo:
         //热插拔设备检测
-        //qDebug() << "handleEvent" << nEvent;
+        qDebug() << "handleEvent" << nEvent;
         //运行时事件
         if (m_hcam)
         {
@@ -125,7 +126,7 @@ void CToupCamera::open(){
         }
         else
         {
-            qDebug()<<"CToupCamera:ToupCam打开失败.";
+            qDebug() << "CToupCamera:ToupCam打开失败.";
             close();
         }
     }

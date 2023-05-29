@@ -4,6 +4,8 @@
 #include <QMainWindow>
 #include <QTimer>
 #include <QThread>
+#include <QMessageBox>
+#include <QFileDialog>
 #include "appinit.h"
 #include "appevent.h"
 
@@ -40,5 +42,11 @@ private slots:
     void showFrame(QImage image);
 
     void on_pushButton_clicked();
+    void on_action_2_triggered();
+    void on_action_3_triggered();
+    void on_action_3_triggered(bool checked);
+    void on_action_4_triggered();
+    void on_action_5_triggered();
+    void on_action_triggered();
 };
 #endif // MAINWINDOW_H

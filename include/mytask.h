@@ -5,7 +5,7 @@
 #include <QRunnable>
 #include <QThread>
 #include <QDebug>
-#include "cncnn.h"
+//#include "cncnn.h"
 
 class MyTask : public QObject, public QRunnable
 {
@@ -13,7 +13,7 @@ class MyTask : public QObject, public QRunnable
 public:
     explicit MyTask(QObject *parent = nullptr);
     void run() override;
-    CNcnn* nc = nullptr;
+//    CNcnn* nc = nullptr;
 signals:
 
 };

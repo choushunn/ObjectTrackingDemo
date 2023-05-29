@@ -14,13 +14,20 @@ CUSBCamera::CUSBCamera(int camIndex, QObject *parent)
 }
 
 
-
+//CUSBCamera::CUSBCamera(std::string camIndex, QObject *parent)
+//    : QObject{parent}
+//    ,m_camIndex(camIndex)
+//{
+//    m_cap = new cv::VideoCapture();
+////    qDebug() << "CUSBCamera" <<QThread::currentThreadId() << QThread::currentThread();
+//}
 
 /**
  * @brief 打开相机
  * @param
  */
 void CUSBCamera::open(){
+    qDebug() << m_camIndex;
     bool ret = m_cap->open(m_camIndex, cv::CAP_ANY);
     if(ret)
     {

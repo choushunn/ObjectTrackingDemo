@@ -3,7 +3,7 @@
 MyTask::MyTask(QObject *parent)
     : QObject{parent}
 {
-    nc = new CNcnn();
+//    nc = new CNcnn();
 }
 
 

@@ -96,3 +96,68 @@ QImage cvMatToQImage(const cv::Mat& mat)
 
     return QImage();
 }
+
+
+
+//int findCameraVideoPath(char *pid, char *vid, char *dpath)
+//{
+//  struct udev *udev = NULL;
+//  struct udev_enumerate *udev_enumerate = NULL;
+//  struct udev_list_entry *list_entry = NULL;
+//  int count = 0;
+//  int flag = 0;
+//  char devName[128]={0};
+
+//  udev = udev_new();
+//  if(udev == NULL)
+//  {
+//    //tips
+//    return 0;
+//  }
+//  udev_enumerate = udev_enumerate_new(udev);
+//  if(udev_enumerate == NULL)
+//  {
+//    //tips
+//    return 0;
+//  }
+
+//  udev_enumerate_add_match_subsystem(udev_enumerate, "video4linux");
+//  udev_enumerate_scan_devices(udev_enumerate);
+//  udev_list_entry_foreach(list_entry, udev_enumerate_get_list_entry(udev_enumerate))
+// {
+//    struct udev_device *device;
+//    device = udev_device_new_from_syspath(udev_enumerate_get_udev(udev_enumerate), udev_list_entry_get_name(list_entry));
+//    if(device!=NULL)
+//    {
+//        //tips
+//            );
+
+//    if(udev_device_get_property_value(device, "ID_VENDOR_ID")!=NULL &&
+//           udev_device_get_property_value(device, "ID_MODEL_ID")!=NULL &&
+//           !strcmp(vid, udev_device_get_property_value(device, "ID_VENDOR_ID")) &&
+//           !strcmp(pid, udev_device_get_property_value(device, "ID_MODEL_ID")))
+//        {
+//        sprintf(devName,"/dev/video%s", udev_device_get_sysnum(device));
+//                flag = 1;
+//        count++;
+//        }
+//    udev_device_unref(device);
+
+//    }
+//    else
+//    {
+//        //tips
+//    }
+//  }
+
+//   if(flag!=0)
+//   {
+//      if(strlen(devName)>0)
+//        memcpy(dpath, devName, strlen(devName));
+//   }
+
+//    udev_enumerate_unref(udev_enumerate);
+//    udev_unref(udev);
+
+//    return flag;
+//}

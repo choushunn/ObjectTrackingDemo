@@ -4,6 +4,7 @@
 #include <QLocale>
 #include <QTranslator>
 #include <QStyleFactory>
+
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
@@ -14,6 +15,7 @@ int main(int argc, char *argv[])
         qDebug()<<val<<"  ";
     //设置当前风格为
     qApp->setStyle(QStyleFactory::create("Fusion"));
+    //翻译
     QTranslator translator;
     const QStringList uiLanguages = QLocale::system().uiLanguages();
     for (const QString &locale : uiLanguages) {
@@ -24,6 +26,10 @@ int main(int argc, char *argv[])
         }
     }
     MainWindow w;
+//    w.showMaximized();
+    //默认全屏
+    w.showFullScreen();
+
     w.show();
     return a.exec();
 }
