@@ -35,11 +35,11 @@ elseif(CMAKE_SYSTEM_NAME MATCHES "Linux")
     # 构建x64版本的程序
     if(CMAKE_HOST_SYSTEM_PROCESSOR MATCHES "AMD64")
         set(LIB_ARCH x64)
-    # 构建arm64版本的程序
+        # 构建arm64版本的程序
     elseif(CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL "aarch64")
         set(LIB_ARCH aarch64)
     else()
-       # 不支持的处理器架构
+        # 不支持的处理器架构
         message(FATAL_ERROR "Unsupported processor architecture: ${CMAKE_HOST_SYSTEM_PROCESSOR}")
     endif()
 endif()
@@ -60,7 +60,9 @@ if(CMAKE_SYSTEM_NAME MATCHES "Windows")
     find_package(ncnn REQUIRED)
     include_directories("${THIRD_PARTY_LIB_PATH}/ncnn/x64/include")
 elseif(CMAKE_SYSTEM_NAME MATCHES "Linux")
-#    find_package(OnnxRuntime REQUIRED)
+    #    find_package(OnnxRuntime REQUIRED)
+    find_package(ncnn REQUIRED)
+    include_directories("${THIRD_PARTY_LIB_PATH}/ncnn/x64/include")
 endif()
 
 #导入Qt库
@@ -89,12 +91,12 @@ FILE(GLOB_RECURSE UI_FILES "${PROJECT_SOURCE_DIR}/ui/*.ui")
 set(TS_FILES "translations/${PROJECT_NAME}_zh_CN.ts")
 
 set(PROJECT_SOURCES
-        ${HEADER_FILES}
-        ${SRC_FILES}
-        ${TS_FILES}
-        ${UI_FILES}
-        resources/logo.rc
-    )
+    ${HEADER_FILES}
+    ${SRC_FILES}
+    ${TS_FILES}
+    ${UI_FILES}
+    resources/logo.rc
+)
 
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)

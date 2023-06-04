@@ -11,7 +11,7 @@
 #include "cusbcamera.h"
 #include "cserialport.h"
 #include "ctoupcamera.h"
-//#include "cncnn.h"
+#include "cncnn.h"
 //#include "yolov8onnx.h"
 #include "utils.h"
 
@@ -29,7 +29,7 @@ public:
     CToupCamera*    toupCamera = nullptr;
     CWebSocket*     webSocket  = nullptr;
     CSerialPort*    serialPort = nullptr;
-//    CNcnn*          ncnnYolo   = nullptr;
+    CNcnn*          ncnnYolo   = nullptr;
     QThread*        appThread  = nullptr;
 //    YoloV8Onnx*     yolov8Onnx = nullptr;
 
@@ -47,7 +47,7 @@ private:
     void initToupCamera();
     void initSerialPort();
 
-//    void initOnnx();
+    void initOnnx();
     void initNcnn();
 
 signals:
