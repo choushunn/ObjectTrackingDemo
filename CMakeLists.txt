@@ -49,21 +49,15 @@ endif()
 set(ToupCam_DIR "${THIRD_PARTY_LIB_PATH}/toupcam")
 #ncnn
 set(ncnn_DIR "${THIRD_PARTY_LIB_PATH}/ncnn/x64/lib/cmake/ncnn")
-set(OnnxRuntime_DIR "${THIRD_PARTY_LIB_PATH}/onnxruntime-win-x64-gpu-1.14.1")
+#onnxruntime
+#set(OnnxRuntime_DIR "${THIRD_PARTY_LIB_PATH}/onnxruntime-win-x64-gpu-1.14.1")
 
 #导入第三方库
 find_package(OpenCV REQUIRED)
 find_package(ToupCam REQUIRED)
-find_package(OnnxRuntime REQUIRED)
+find_package(ncnn REQUIRED)
+#find_package(OnnxRuntime REQUIRED)
 
-if(CMAKE_SYSTEM_NAME MATCHES "Windows")
-    find_package(ncnn REQUIRED)
-    include_directories("${THIRD_PARTY_LIB_PATH}/ncnn/x64/include")
-elseif(CMAKE_SYSTEM_NAME MATCHES "Linux")
-    #    find_package(OnnxRuntime REQUIRED)
-    find_package(ncnn REQUIRED)
-    include_directories("${THIRD_PARTY_LIB_PATH}/ncnn/x64/include")
-endif()
 
 #导入Qt库
 find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets LinguistTools)
@@ -136,8 +130,8 @@ target_link_libraries(${PROJECT_NAME} PRIVATE Qt${QT_VERSION_MAJOR}::Multimedia)
 target_link_libraries(${PROJECT_NAME} PRIVATE Qt${QT_VERSION_MAJOR}::Concurrent)
 #链接第三方库
 target_link_libraries(${PROJECT_NAME} PRIVATE ${OpenCV_LIBS})
-target_link_libraries(${PROJECT_NAME} PRIVATE ${ToupCam_LIBS})
-target_link_libraries(${PROJECT_NAME} PRIVATE ${OnnxRuntime_LIBS})
+target_link_libraries(${PROJECT_NAME} PRIVATE ${TOUPCAM_LIBRARIES})
+#target_link_libraries(${PROJECT_NAME} PRIVATE ${OnnxRuntime_LIBS})
 target_link_libraries(${PROJECT_NAME} PRIVATE ncnn)
 
 set_target_properties(${PROJECT_NAME} PROPERTIES
