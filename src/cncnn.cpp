@@ -356,6 +356,8 @@ const char* CNcnn::m_classNames[] = {
     "hair drier", "toothbrush"
 };
 
+
+
 void CNcnn::drawObjects(const cv::Mat& bgr, const std::vector<Object>& objects)
 {
     cv::Mat image = bgr.clone();
@@ -396,7 +398,7 @@ void CNcnn::drawObjects(const cv::Mat& bgr, const std::vector<Object>& objects)
 
 void CNcnn::detect(cv::Mat m){
     cv::resize(m,m,cv::Size(800,600));
-//    cv::cvtColor(m,m,cv::COLOR_BGR2RGB);
+    cv::cvtColor(m,m,cv::COLOR_BGR2RGB);
     qDebug() << "CNcnn:2.detect:" <<QThread::currentThreadId() << QThread::currentThread();
     if (m.empty())
     {

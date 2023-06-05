@@ -13,14 +13,21 @@
 //OpenCV 视频接口模块
 //#include <opencv2/videoio.hpp>
 
-class utils : public QObject
+//class utils : public QObject
+//{
+//    Q_OBJECT
+//public:
+//    explicit utils(QObject *parent = nullptr);
+
+//signals:
+
+//};
+
+struct Object
 {
-    Q_OBJECT
-public:
-    explicit utils(QObject *parent = nullptr);
-
-signals:
-
+    cv::Rect_<float> rect;
+    int label;
+    float prob;
 };
 
 int Normalization(int value);

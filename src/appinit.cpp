@@ -54,7 +54,7 @@ AppInit::AppInit(Ui::MainWindow *ui)
     //WebSocket初始化
     //    initWebSocket();
     //Onnx初始化
-        initOnnx();
+    initOnnx();
     //Ncnn初始化
     initNcnn();
     //相机类型切换检测
@@ -272,11 +272,12 @@ void AppInit::showTextMessage(const QString &message){
  */
 void AppInit::initOnnx()
 {
-//    yolov8Onnx = new YoloV8Onnx();
-//    //    appThread = new QThread();
-//    //    nc->moveToThread(appThread);
-//    //    appThread->start();
-        qDebug() << "AppInit:Onnx初始化完成.";
+    yolov8Onnx = new YoloV8Onnx();
+//    yolov8Onnx->tracking()
+    //    //    appThread = new QThread();
+    //    //    nc->moveToThread(appThread);
+    //    //    appThread->start();
+    qDebug() << "AppInit:Onnx初始化完成.";
 }
 
 
@@ -286,7 +287,7 @@ void AppInit::initOnnx()
  */
 void AppInit::initNcnn()
 {
-        ncnnYolo = new CNcnn();
+    ncnnYolo = new CNcnn();
     //    appThread = new QThread();
     //    nc->moveToThread(appThread);
     //    appThread->start();

@@ -1,26 +1,39 @@
-//#ifndef YOLOV8ONNX_H
-//#define YOLOV8ONNX_H
-//#include <QObject>
-//#include <onnxruntime_cxx_api.h>
-//#include <codecvt>
-//class YoloV8Onnx : public QObject
-//{
-//    Q_OBJECT
-//public:
-//    explicit YoloV8Onnx(QObject *parent = nullptr);
+#ifndef YOLOV8ONNX_H
+#define YOLOV8ONNX_H
+#include <QObject>
+
+#include "layer.h"
+#include "net.h"
+
+//#include <opencv2/core/core.hpp>
+//#include <opencv2/highgui/highgui.hpp>
+//#include <opencv2/imgproc/imgproc.hpp>
+#include <stdio.h>
+#include <vector>
+#include <fstream>
+#include <iostream>
+#include "BYTETracker.h"
+#include "utils.h"
 
 
-//    static constexpr const int width_ = 28;
-//      static constexpr const int height_ = 28;
-//private:
-//  Ort::Env env;
-//  Ort::Session session_{env, L"mnist.onnx", Ort::SessionOptions{nullptr}};
 
-//  Ort::Value input_tensor_{nullptr};
-//  std::array<int64_t, 4> input_shape_{1, 1, width_, height_};
 
-//  Ort::Value output_tensor_{nullptr};
-//  std::array<int64_t, 2> output_shape_{1, 10};
-//};
+class YoloV8Onnx : public QObject,public ncnn::Layer
+{
+    Q_OBJECT
+public:
+    explicit YoloV8Onnx(QObject *parent = nullptr);
+private:
+    int detect_yolox(const cv::Mat& bgr, std::vector<Object>& objects);
+    static const char* class_names[];
+    ncnn::Net* yolox;
+    BYTETracker* tracker;
 
-//#endif // YOLOV8ONNX_H
+public slots:
+    void tracking(cv::Mat m);
+
+signals:
+    void sendDectectImage(QImage image);
+};
+
+#endif // YOLOV8ONNX_H

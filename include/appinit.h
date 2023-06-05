@@ -12,7 +12,7 @@
 #include "cserialport.h"
 #include "ctoupcamera.h"
 #include "cncnn.h"
-//#include "yolov8onnx.h"
+#include "yolov8onnx.h"
 #include "utils.h"
 
 namespace Ui{
@@ -30,8 +30,9 @@ public:
     CWebSocket*     webSocket  = nullptr;
     CSerialPort*    serialPort = nullptr;
     CNcnn*          ncnnYolo   = nullptr;
+
     QThread*        appThread  = nullptr;
-//    YoloV8Onnx*     yolov8Onnx = nullptr;
+    YoloV8Onnx*     yolov8Onnx = nullptr;
 
 private:
     Ui::MainWindow       *mainwindowUi;

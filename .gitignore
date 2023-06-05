@@ -1,4 +1,4 @@
-
+include/eigen3*
 opencv/
 *.user*
 ### Example user template

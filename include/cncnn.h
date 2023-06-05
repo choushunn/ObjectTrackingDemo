@@ -11,12 +11,6 @@
 
 #define MAX_STRIDE 64
 
-struct Object
-{
-    cv::Rect_<float> rect;
-    int label;
-    float prob;
-};
 
 
 class CNcnn : public QObject,public ncnn::Layer
