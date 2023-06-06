@@ -62,9 +62,7 @@ YoloV8Onnx::YoloV8Onnx(QObject *parent)
     yolox->register_custom_layer("YoloV5Focus", YoloV5Focus_layer_creator);
     yolox->load_param("./models/yoloxN.param");
     yolox->load_model("./models/yoloxN.bin");
-    int fps = 30;
 
-    tracker = new BYTETracker(fps, 30);
 }
 
 const char* YoloV8Onnx::class_names[] = {
@@ -79,7 +77,15 @@ const char* YoloV8Onnx::class_names[] = {
     "hair drier", "toothbrush"
 };
 
+void YoloV8Onnx::initTracker(){
+    int fps = 30;
+    tracker = new BYTETracker(fps, 30);
+}
 
+void YoloV8Onnx::deleteTracker(){
+    delete tracker;
+    output_stracks.clear();
+}
 
 struct GridAndStride
 {
@@ -330,7 +336,7 @@ void YoloV8Onnx::tracking(cv::Mat m){
 
     std::vector<Object> objects;
     detect_yolox(frame, objects);
-    vector<STrack> output_stracks = tracker->update(objects);
+    output_stracks = tracker->update(objects);
 
     for(size_t i = 0; i < output_stracks.size(); i++){
         vector<float> tlwh = output_stracks[i].tlwh;

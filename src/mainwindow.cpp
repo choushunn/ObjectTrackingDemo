@@ -36,11 +36,15 @@ void MainWindow::on_m_btn_open_camera_clicked(bool checked)
         //1s读10帧
         //        fps = ui->lineEdit_FPS->text().toInt();
         m_timer->setInterval(int(1000/fps));
+
         connect(appInit->ncnnYolo, &CNcnn::sendDectectImage, this, &::MainWindow::showFrame);
         connect(appInit->yolov8Onnx, &YoloV8Onnx::sendDectectImage, this, &::MainWindow::showFrame);
+//        connect(appInit->toupCamera, &CToupCamera::sendImage, this, &::MainWindow::showFrame);
+//        connect(appInit->toupCamera, &CToupCamera::sendFrame, this, &::MainWindow::showFrame);
         if(ui->m_cbx_camera_type->currentText() == "USB"){
             appInit->webCamera->open();
 
+            appInit->yolov8Onnx->initTracker();
             m_timer->start();
             //读取帧
             connect(m_timer, &QTimer::timeout, appInit->webCamera, &CUSBCamera::read);
@@ -76,6 +80,8 @@ void MainWindow::on_m_btn_open_camera_clicked(bool checked)
         {
             appInit->toupCamera->close();
         }
+
+        appInit->yolov8Onnx->deleteTracker();
         ui->m_btn_open_camera->setText("打开");
         ui->m_lbl_display->clear();
         ui->m_cbx_camera_list->setDisabled(false);
@@ -139,7 +145,7 @@ void MainWindow::on_m_btn_open_web_socket_clicked()
  */
 void MainWindow::showFrame(QImage image)
 {
-    //    qDebug() << "MainWindow:3.show frame.";
+        qDebug() << "MainWindow:3.show frame.";
     //    QImage new_image = image.scaled(900, 700, Qt::KeepAspectRatio, Qt::FastTransformation);
     QImage new_image = image.scaled(ui->m_lbl_display->width(), ui->m_lbl_display->height(), Qt::KeepAspectRatio, Qt::FastTransformation);
     ui->m_lbl_display->setPixmap(QPixmap::fromImage(new_image));

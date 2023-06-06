@@ -23,11 +23,14 @@ class YoloV8Onnx : public QObject,public ncnn::Layer
     Q_OBJECT
 public:
     explicit YoloV8Onnx(QObject *parent = nullptr);
+    void initTracker();
+    void deleteTracker();
 private:
     int detect_yolox(const cv::Mat& bgr, std::vector<Object>& objects);
     static const char* class_names[];
     ncnn::Net* yolox;
     BYTETracker* tracker;
+    vector<STrack> output_stracks;
 
 public slots:
     void tracking(cv::Mat m);

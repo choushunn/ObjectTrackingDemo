@@ -117,6 +117,7 @@ void CToupCamera::open(){
             delete[] m_pData;
             m_pData = nullptr;
         }
+
         //启动相机
         if (SUCCEEDED(Toupcam_StartPullModeWithCallback(m_hcam, eventCallBack, this)))
         {
@@ -126,7 +127,7 @@ void CToupCamera::open(){
         }
         else
         {
-            qDebug() << "CToupCamera:ToupCam打开失败.";
+            qDebug() << "CToupCamera:ToupCam打开失败，拉取图像失败。";
             close();
         }
     }
@@ -139,11 +140,16 @@ void CToupCamera::open(){
  */
 void CToupCamera::read()
 {
-    if(SUCCEEDED(Toupcam_PullImageV2(m_hcam, m_pData, 24, pInfo))){
-//        QImage image(m_pData, pInfo->width, pInfo->height, QImage::Format_RGB888);
+    HRESULT hr = Toupcam_PullImageV2(m_hcam, m_pData, 24, pInfo);
+    if(SUCCEEDED(hr)){
+        QImage image(m_pData, pInfo->width, pInfo->height, QImage::Format_RGB888);
+        emit sendImage(image);
         //        emit sendImage(image);
-        cv::Mat frame(pInfo->height,pInfo->width, CV_8UC3, m_pData);
-        emit sendFrame(frame);
+        qDebug() << "ToupCam读取图像成功。";
+        //        cv::Mat frame(pInfo->height, pInfo->width, CV_8UC3, m_pData);
+        //        emit sendFrame(frame);
+    }else{
+        qDebug() << "ToupCam读取图像失败。";
     }
 }
 

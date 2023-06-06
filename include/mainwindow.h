@@ -29,7 +29,7 @@ private:
     QThread*    appThread;
     QTimer*     m_timer = nullptr;
     QTimer*     m_searchTimer = nullptr;
-    int         fps = 30;
+    int         fps = 1;
 private slots:
     void on_m_btn_open_camera_clicked(bool checked);
     void on_m_btn_open_serial_port_clicked(bool checked);

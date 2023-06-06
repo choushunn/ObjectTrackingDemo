@@ -7,7 +7,7 @@
 //OpenCV 核心模块
 #include <opencv2/core.hpp>
 //OpenCV 图像编码模块
-//#include <opencv2/imgcodecs.hpp>
+#include <opencv2/imgcodecs.hpp>
 //OpenCV 图像处理模块
 #include <opencv2/imgproc.hpp>
 //OpenCV 视频接口模块

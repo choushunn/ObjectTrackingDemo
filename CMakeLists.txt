@@ -25,39 +25,36 @@ endif()
 
 # 依赖库
 if(CMAKE_SYSTEM_NAME MATCHES "Windows")
-    set(LIB_ARCH x64)
     set(OpenCV_DIR "${THIRD_PARTY_LIB_PATH}/opencv")
+    #ToupCam_DIR
+    set(ToupCam_DIR "${THIRD_PARTY_LIB_PATH}/toupcam/win")
+    #ncnn
+    set(ncnn_DIR "${THIRD_PARTY_LIB_PATH}/ncnn/x64/lib/cmake/ncnn")
+    #onnxruntime
+    #set(OnnxRuntime_DIR "${THIRD_PARTY_LIB_PATH}/onnxruntime-win-x64-gpu-1.14.1")
+    include_directories("${THIRD_PARTY_LIB_PATH}/ncnn/x64/include")
 elseif(CMAKE_SYSTEM_NAME MATCHES "Linux")
-    # 设置OpenCV路径
-    set(OpenCV_DIR "${THIRD_PARTY_LIB_PATH}/opencv/lib/cmake/opencv4")
-    # 设置OnnxRuntime
-    set(OnnxRuntime_DIR "${THIRD_PARTY_LIB_PATH}/onnxruntime-gpu")
-    # 构建x64版本的程序
-    if(CMAKE_HOST_SYSTEM_PROCESSOR MATCHES "AMD64")
-        set(LIB_ARCH x64)
-        # 构建arm64版本的程序
+    if(CMAKE_HOST_SYSTEM_PROCESSOR MATCHES "x86_64")
+        # x86_64版本
+        set(LIB_ARCH x86_64)
     elseif(CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL "aarch64")
+        # arm64版本
         set(LIB_ARCH aarch64)
     else()
         # 不支持的处理器架构
         message(FATAL_ERROR "Unsupported processor architecture: ${CMAKE_HOST_SYSTEM_PROCESSOR}")
     endif()
+    # 设置OpenCV路径
+    set(OpenCV_DIR "${THIRD_PARTY_LIB_PATH}/opencv/lib/cmake/opencv4")
+    # 设置OnnxRuntime
+    set(OnnxRuntime_DIR "${THIRD_PARTY_LIB_PATH}/onnxruntime-gpu")
 endif()
-
-
-#设置ToupCam_DIR
-set(ToupCam_DIR "${THIRD_PARTY_LIB_PATH}/toupcam")
-#ncnn
-set(ncnn_DIR "${THIRD_PARTY_LIB_PATH}/ncnn/x64/lib/cmake/ncnn")
-#onnxruntime
-#set(OnnxRuntime_DIR "${THIRD_PARTY_LIB_PATH}/onnxruntime-win-x64-gpu-1.14.1")
 
 #导入第三方库
 find_package(OpenCV REQUIRED)
 find_package(ToupCam REQUIRED)
 find_package(ncnn REQUIRED)
 #find_package(OnnxRuntime REQUIRED)
-
 
 #导入Qt库
 find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets LinguistTools)
@@ -131,8 +128,8 @@ target_link_libraries(${PROJECT_NAME} PRIVATE Qt${QT_VERSION_MAJOR}::Concurrent)
 #链接第三方库
 target_link_libraries(${PROJECT_NAME} PRIVATE ${OpenCV_LIBS})
 target_link_libraries(${PROJECT_NAME} PRIVATE ${TOUPCAM_LIBRARIES})
-#target_link_libraries(${PROJECT_NAME} PRIVATE ${OnnxRuntime_LIBS})
 target_link_libraries(${PROJECT_NAME} PRIVATE ncnn)
+#target_link_libraries(${PROJECT_NAME} PRIVATE ${OnnxRuntime_LIBS})
 
 set_target_properties(${PROJECT_NAME} PROPERTIES
     MACOSX_BUNDLE_GUI_IDENTIFIER my.example.com
@@ -142,7 +139,6 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
     WIN32_EXECUTABLE TRUE
 )
 
-# message("${CMAKE_INSTALL_LIBDIR}")
 # install target and libraries
 install(TARGETS ${PROJECT_NAME}
     BUNDLE DESTINATION .
@@ -152,8 +148,7 @@ install(TARGETS ${PROJECT_NAME}
     PUBLIC_HEADER DESTINATION include
 )
 
-
-# 安装models文件夹到指定目录下
+# 复制models文件夹到安装目录下
 install(DIRECTORY ${CMAKE_SOURCE_DIR}/models DESTINATION ${CMAKE_INSTALL_PREFIX})
 
 if(QT_VERSION_MAJOR EQUAL 6)
