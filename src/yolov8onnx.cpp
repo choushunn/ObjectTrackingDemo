@@ -278,13 +278,12 @@ int YoloV8Onnx::detect_yolox(const cv::Mat& bgr, std::vector<Object>& objects)
     // different from yolov5, yolox only pad on bottom and right side,
     // which means users don't need to extra padding info to decode boxes coordinate.
     ncnn::copy_make_border(in, in_pad, 0, hpad, 0, wpad, ncnn::BORDER_CONSTANT, 114.f);
-
+    //    qDebug() <<"wh:" <<wpad << "x"<< hpad ;
     ncnn::Extractor ex = yolox->create_extractor();
 
     ex.input("images", in_pad);
 
     std::vector<Object> proposals;
-
     {
         ncnn::Mat out;
         ex.extract("output", out);
@@ -329,94 +328,98 @@ int YoloV8Onnx::detect_yolox(const cv::Mat& bgr, std::vector<Object>& objects)
 
     return 0;
 }
+// Set up camera parameters
+#define CAMERA_CENTER_X 320
+#define CAMERA_CENTER_Y 240
+
+// Set up servo parameters
+#define SERVO_RANGE_MIN -135
+#define SERVO_RANGE_MAX 135
+
+// Set up control parameters
+#define KP 1.0
+
+int normalizeValue(int x, int min_value, int max_value, int normalized_min, int normalized_max) {
+    double normalized_x = (x - min_value) / static_cast<double>(max_value - min_value);
+    double scaled_x = normalized_x * (normalized_max - normalized_min) + normalized_min;
+    return static_cast<int>(scaled_x);
+}
+
+// Control servo to keep object in the center of the image
+void controlServo(cv::Rect detection, int& servo_x, int& servo_y) {
+    // Calculate detection center coordinates
+    double center_x = detection.x + detection.width / 2.0;
+    double center_y = detection.y + detection.height / 2.0;
+    qDebug() << "objecet center_xy:" << center_x << "," << center_y;
+    // Calculate position error
+    double error_x = center_x - CAMERA_CENTER_X;
+    double error_y = CAMERA_CENTER_Y - center_y  ;
+    qDebug() << "objecet error_xy:" << error_x << "," << error_y;
+    // Calculate control signal adjustment
+    //    int delta_x = (int)(KP * error_x);
+    //    int delta_y = (int)(KP * error_y);
+    servo_x = normalizeValue(error_x, -320, 320, SERVO_RANGE_MIN,SERVO_RANGE_MAX);
+    servo_y = normalizeValue(error_y, -240, 240, SERVO_RANGE_MIN,SERVO_RANGE_MAX);
+    // Limit servo control signals within the servo range
+    servo_x = std::max(std::min(servo_x, SERVO_RANGE_MAX), SERVO_RANGE_MIN);
+    servo_y = std::max(std::min(servo_y, SERVO_RANGE_MAX), SERVO_RANGE_MIN);
+    qDebug() << "objecet servo_xy:" << servo_x << "," << servo_y;
+}
+
+cv::Mat drawCrosshair(cv::Mat image, cv::Scalar color, int thickness) {
+    // Calculate center point of the image
+    cv::Point center(image.cols / 2, image.rows / 2);
+    // Draw vertical line
+    cv::line(image, cv::Point(center.x, 0), cv::Point(center.x, image.rows - 1), color, thickness);
+    // Draw horizontal line
+    cv::line(image, cv::Point(0, center.y), cv::Point(image.cols - 1, center.y), color, thickness);
+    return image;
+}
 
 void YoloV8Onnx::tracking(cv::Mat m){
+    cv::Scalar color(0, 0, 255); // red color
+    int thickness = 2;
+    cv::resize(m, m, cv::Size(640,480));
+
     cv::Mat frame = m;
-
-
     std::vector<Object> objects;
     detect_yolox(frame, objects);
     output_stracks = tracker->update(objects);
-
-    for(size_t i = 0; i < output_stracks.size(); i++){
-        vector<float> tlwh = output_stracks[i].tlwh;
+    cv::Rect rect_1;
+    int servo_x = 0;
+    int servo_y = 0;
+    //单个物体
+    if(output_stracks.size() > 0){
+        vector<float> tlwh = output_stracks[0].tlwh;
         bool vertical = tlwh[2] / tlwh[3] > 1.6;
         if (tlwh[2] * tlwh[3] > 20 && !vertical){
-            Scalar s = tracker->get_color(output_stracks[i].track_id);
-            putText(frame, format("%d", output_stracks[i].track_id), Point(tlwh[0], tlwh[1] - 5),
+            Scalar s = tracker->get_color(output_stracks[0].track_id);
+            putText(frame, format("%d", output_stracks[0].track_id), Point(tlwh[0], tlwh[1] - 5),
                     0, 0.6, Scalar(0, 0, 255), 2, LINE_AA);
-            rectangle(frame, Rect(tlwh[0], tlwh[1], tlwh[2], tlwh[3]), s, 2);
+            rectangle(frame, Rect(tlwh[0], tlwh[1], tlwh[2], tlwh[3]), s, thickness);
+            int center_x = tlwh[0] + tlwh[2] / 2;
+            int center_y = tlwh[1] + tlwh[3] / 2;
+            cv::line(frame, cv::Point(center_x, tlwh[1]), cv::Point(center_x, tlwh[1] + tlwh[3]), s, thickness);
+            cv::line(frame, cv::Point(tlwh[0], center_y), cv::Point(tlwh[0] + tlwh[2], center_y), s, thickness);
+            rect_1 = Rect(tlwh[0], tlwh[1], tlwh[2], tlwh[3]);
+            controlServo(rect_1, servo_x, servo_y);
+            frame = drawCrosshair(frame, color, thickness);
         }
+        cv::Point servo_xy = cv::Point(servo_x, servo_y);
+        QImage new_image = cvMatToQImage(frame);
+        emit sendDectectImage(new_image, servo_xy);
     }
-    QImage new_image = cvMatToQImage(frame);
-    emit sendDectectImage(new_image);
+    //多个物体
+    //    for(size_t i = 0; i < output_stracks.size(); i++){
+    //        vector<float> tlwh = output_stracks[i].tlwh;
+    //        bool vertical = tlwh[2] / tlwh[3] > 1.6;
+    //        if (tlwh[2] * tlwh[3] > 20 && !vertical){
+    //            Scalar s = tracker->get_color(output_stracks[i].track_id);
+    //            putText(frame, format("%d", output_stracks[i].track_id), Point(tlwh[0], tlwh[1] - 5),
+    //                    0, 0.6, Scalar(0, 0, 255), 2, LINE_AA);
+    //            rectangle(frame, Rect(tlwh[0], tlwh[1], tlwh[2], tlwh[3]), s, 2);
+    //            rect_1 = Rect(tlwh[0], tlwh[1], tlwh[2], tlwh[3]);
+    //        }
+    //    }
 }
 
-
-//int main(int argc, char** argv)
-//{
-//    float f;
-//    float FPS[16];
-//    int i, Fcnt=0;
-//    cv::Mat frame;
-//    chrono::steady_clock::time_point Tbegin, Tend;
-
-//    for(i=0;i<16;i++) FPS[i]=0.0;
-
-//    yolox.register_custom_layer("YoloV5Focus", YoloV5Focus_layer_creator);
-
-//    // get your onnx models here: https://yolox.readthedocs.io/en/latest/demo/onnx_readme.html
-//    // follow the steps given here: https://github.com/Megvii-BaseDetection/YOLOX/tree/main/demo/ncnn/cpp
-//    yolox.load_param("yoloxN.param");
-//    yolox.load_model("yoloxN.bin");
-
-//    VideoCapture cap(21);//palace.mp4");
-//    if (!cap.isOpened()) {
-//        cerr << "ERROR: Unable to open the camera" << endl;
-//        return 0;
-//    }
-//    int fps = cap.get(CAP_PROP_FPS);
-
-//    BYTETracker tracker(fps, 30);
-
-//    cout << "Start grabbing, press ESC on Live window to terminate" << endl;
-//    while(1){
-//        cap >> frame;
-//        if (frame.empty()) {
-//            cerr << "ERROR: Unable to grab from the camera" << endl;
-//            break;
-//        }
-
-//        Tbegin = chrono::steady_clock::now();
-
-//        std::vector<Object> objects;
-//        detect_yolox(frame, objects);
-
-//        vector<STrack> output_stracks = tracker.update(objects);
-
-//        for(size_t i = 0; i < output_stracks.size(); i++){
-//            vector<float> tlwh = output_stracks[i].tlwh;
-//            bool vertical = tlwh[2] / tlwh[3] > 1.6;
-//            if (tlwh[2] * tlwh[3] > 20 && !vertical){
-//                Scalar s = tracker.get_color(output_stracks[i].track_id);
-//                putText(frame, format("%d", output_stracks[i].track_id), Point(tlwh[0], tlwh[1] - 5),
-//                        0, 0.6, Scalar(0, 0, 255), 2, LINE_AA);
-//                rectangle(frame, Rect(tlwh[0], tlwh[1], tlwh[2], tlwh[3]), s, 2);
-//            }
-//        }
-
-//        Tend = chrono::steady_clock::now();
-//        //calculate frame rate
-//        f = chrono::duration_cast <chrono::milliseconds> (Tend - Tbegin).count();
-//        if(f>0.0) FPS[((Fcnt++)&0x0F)]=1000.0/f;
-//        for(f=0.0, i=0;i<16;i++){ f+=FPS[i]; }
-//        putText(frame, format("FPS %0.2f", f/16),Point(10,20),FONT_HERSHEY_SIMPLEX,0.6, Scalar(0, 0, 255));
-
-//        cv::imshow("RPi4 - 1.95 GHz - 2 GB ram",frame);
-//    //    cv::imwrite("test.jpg",m);
-//        char esc = waitKey(5);
-//        if(esc == 27) break;
-//    }
-
-//    return 0;
-//}

@@ -52,6 +52,7 @@ void CSerialPort::close() {
         QTimer::singleShot(10, this, [=]{
             sendData(1, 135);
         });
+
         QTimer::singleShot(50, this, [=]{
             sendData(2, 135);
         });
@@ -71,7 +72,7 @@ void CSerialPort::sendData(int device_id = 1, int angle = 135) {
     angle = abs(angle);
     if(device_id == 1 && (angle<45 || angle>225)){
         angle = 135;
-    }else{
+    }else {
         angle %= 270;
     }
 

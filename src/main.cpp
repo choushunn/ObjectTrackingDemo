@@ -28,7 +28,7 @@ int main(int argc, char *argv[])
     MainWindow w;
 //    w.showMaximized();
     //默认全屏
-    w.showFullScreen();
+//    w.showFullScreen();
 
     w.show();
     return a.exec();

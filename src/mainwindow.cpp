@@ -23,6 +23,9 @@ MainWindow::MainWindow(QWidget *parent)
     m_searchTimer->setInterval(120);
     connect(m_searchTimer, &QTimer::timeout, this, &MainWindow::on_timeoutSearch);
     qDebug() << "MainWindow" <<QThread::currentThreadId() << QThread::currentThread();
+    ui->tabWidget->setVisible(false);
+
+    ui->pushButton_2->raise();
 }
 
 /**
@@ -38,7 +41,8 @@ void MainWindow::on_m_btn_open_camera_clicked(bool checked)
         m_timer->setInterval(int(1000/fps));
 
         connect(appInit->ncnnYolo, &CNcnn::sendDectectImage, this, &::MainWindow::showFrame);
-        connect(appInit->yolov8Onnx, &YoloV8Onnx::sendDectectImage, this, &::MainWindow::showFrame);
+//        connect(appInit->yolov8Onnx, &YoloV8Onnx::sendDectectImage, this, &::MainWindow::showFrame);
+        connect(appInit->yolov8Onnx, &YoloV8Onnx::sendDectectImage, this, &::MainWindow::showFrameServo);
 //        connect(appInit->toupCamera, &CToupCamera::sendImage, this, &::MainWindow::showFrame);
 //        connect(appInit->toupCamera, &CToupCamera::sendFrame, this, &::MainWindow::showFrame);
         if(ui->m_cbx_camera_type->currentText() == "USB"){
@@ -149,6 +153,46 @@ void MainWindow::showFrame(QImage image)
     //    QImage new_image = image.scaled(900, 700, Qt::KeepAspectRatio, Qt::FastTransformation);
     QImage new_image = image.scaled(ui->m_lbl_display->width(), ui->m_lbl_display->height(), Qt::KeepAspectRatio, Qt::FastTransformation);
     ui->m_lbl_display->setPixmap(QPixmap::fromImage(new_image));
+}
+
+/**
+ * @brief 显示QImage
+ * @param image    接收到的QImage
+ */
+void MainWindow::showFrameServo(QImage image,cv::Point servo_xy)
+{
+        qDebug() << "MainWindow:3.show frame.";
+    //    QImage new_image = image.scaled(900, 700, Qt::KeepAspectRatio, Qt::FastTransformation);
+    QImage new_image = image.scaled(ui->m_lbl_display->width(), ui->m_lbl_display->height(), Qt::KeepAspectRatio, Qt::FastTransformation);
+    ui->m_lbl_display->setPixmap(QPixmap::fromImage(new_image));
+    qDebug() << servo_xy.x << "x" << servo_xy.y;
+    if(servo_xy.x==-135 && servo_xy.y==135)
+    {
+        qDebug() << "没有检测到物体";
+        m_count_no_objects +=1;
+        if(m_count_no_objects>=10){
+            m_servo_x = 135;
+            QTimer::singleShot(50, this, [=]{
+                //2# 控制上下
+                appInit->serialPort->sendData(1, 135);
+            });
+            appInit->serialPort->sendData(2, 135);
+            m_count_no_objects=0;
+        }
+    }
+    else
+    {
+        m_servo_x -= servo_xy.x*0.1;
+        m_servo_y += servo_xy.y*0.08;
+        //1# 控制左右
+        appInit->serialPort->sendData(2, m_servo_x);
+        QTimer::singleShot(50, this, [=]{
+            //2# 控制上下
+            appInit->serialPort->sendData(1, m_servo_y);
+        });
+
+        ui->m_lbl_slider2_value->setText(QString::number(servo_xy.y));
+    }
 }
 
 /**
@@ -303,6 +347,16 @@ void MainWindow::on_action_triggered()
     {
         QPixmap pixmap(fileName);
         ui->m_lbl_display->setPixmap(pixmap);
+    }
+}
+
+
+void MainWindow::on_pushButton_2_clicked()
+{
+    if(ui->tabWidget->isVisible()){
+        ui->tabWidget->setVisible(false);
+    }else{
+        ui->tabWidget->setVisible(true);
     }
 }
 

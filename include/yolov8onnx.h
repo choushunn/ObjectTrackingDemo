@@ -36,7 +36,7 @@ public slots:
     void tracking(cv::Mat m);
 
 signals:
-    void sendDectectImage(QImage image);
+    void sendDectectImage(QImage image, cv::Point servo_xy);
 };
 
 #endif // YOLOV8ONNX_H
