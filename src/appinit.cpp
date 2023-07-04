@@ -52,55 +52,11 @@ AppInit::AppInit(Ui::MainWindow *ui)
     //串口初始化
     initSerialPort();
     //WebSocket初始化
-    //    initWebSocket();
+    initWebSocket();
     //Onnx初始化
     initOnnx();
     //Ncnn初始化
     initNcnn();
-    //相机类型切换检测
-    connect(mainwindowUi->m_cbx_camera_list, QOverload<int>::of(&QComboBox::currentIndexChanged), this, [this](int index)
-    {
-#ifdef _WIN32
-        m_cameraIndex = index;
-#else
-        if(mainwindowUi->m_cbx_camera_type->currentText() == "USB"){
-            QByteArray dev_name = m_cameraList[index].id();
-            m_cameraIndex = findCameraIndex(dev_name);
-            //切换先删除初始化相机
-            if(webCamera){
-                delete webCamera;
-            }
-            webCamera = new CUSBCamera(m_cameraIndex);
-        }else{
-            m_cameraIndex = index;
-        }
-#endif
-
-        qDebug() << "AppInit:camera index changed:" << m_cameraIndex;
-    });
-
-    connect(mainwindowUi->m_cbx_camera_type, QOverload<int>::of(&QComboBox::currentIndexChanged), this, [this](int index)
-    {
-        qDebug() << "AppInit:camera type changed:" << mainwindowUi->m_cbx_camera_type->currentText();
-        if(mainwindowUi->m_cbx_camera_type->currentText() == "USB"){
-            initCamera();
-        }else if(mainwindowUi->m_cbx_camera_type->currentText() == "TOUP"){
-            initToupCamera();
-        }
-        else
-        {
-            qDebug() <<"AppInit:Camera Failed.";
-        }
-    });
-
-
-
-    connect(mainwindowUi->m_cbx_serial_port_list, QOverload<int>::of(&QComboBox::currentIndexChanged), this, [this](int index)
-    {
-        qDebug() << "AppInit:serial port changed:" << mainwindowUi->m_cbx_serial_port_list->currentText();
-        serialPort = new CSerialPort(mainwindowUi->m_cbx_serial_port_list->currentText(), 115200);
-    });
-
 }
 
 /**
@@ -112,91 +68,119 @@ void AppInit::initMainWindowUI()
     qDebug() << "AppInit:UI初始化完成.";
 }
 
+/**
+ * @brief 获取可用相机列表
+ * @param
+ */
+void getCameraList(std::vector<std::string> &camera_list,std::string& camera_type) {
+    if(camera_type=="TOUP"){
+        ToupcamDeviceV2 m_arr[TOUPCAM_MAX]; //所有相机
+        int toupCamCount = Toupcam_EnumV2(m_arr);
+        for (int i = 0; i < toupCamCount; ++i) {
+            qDebug() << m_arr[i].id << m_arr[i].displayname;
+#ifdef _WIN32
+            camera_list.push_back(QString::fromWCharArray(m_arr[i].displayname).toStdString());
+#else
+            camera_list.push_back(m_arr[i].displayname);
+#endif
+        }
+    }else{
+        //查询可用相机
+        QList<QCameraDevice> cameraList = QMediaDevices::videoInputs();
+        for (const QCameraDevice &cameraDevice : cameraList) {
+            camera_list.push_back(cameraDevice.description().toStdString());
+        }
+    }
+}
+
 
 /**
- * @brief USB摄像头初始化
+ * @brief 摄像头初始化
  * @param
  */
 void AppInit::initCamera()
 {
-    mainwindowUi->m_cbx_camera_list->clear();
-    //查询可用相机
-    m_cameraList = QMediaDevices::videoInputs();
-    for (const QCameraDevice &cameraDevice : m_cameraList) {
-        //qDebug()<<cameraDevice.id() << cameraDevice.isNull() << cameraDevice.position() << cameraDevice.isDefault();
-        mainwindowUi->m_cbx_camera_list->addItem(cameraDevice.description());
-    }
+    //相机类型切换检测
+    connect(mainwindowUi->m_cbx_camera_list,
+            QOverload<int>::of(&QComboBox::currentIndexChanged),
+            this, [this](int index)
+            {
+#ifdef _WIN32
+                m_cameraIndex = index;
+#else
+            if(mainwindowUi->m_cbx_camera_type->currentText() == "USB"){
+                QByteArray dev_name = m_cameraList[index].id();
+                m_cameraIndex = findCameraIndex(dev_name);
 
-    if(m_cameraList.count()==0){
+            }else{
+                m_cameraIndex = index;
+            }
+#endif
+                camera = CCamera::createInstance(
+                    camera_type,
+                    m_cameraIndex);
+                qDebug() << "AppInit:camera index changed:" << m_cameraIndex;
+            });
+
+    connect(mainwindowUi->m_cbx_camera_type,
+            QOverload<int>::of(&QComboBox::currentIndexChanged),
+            this, [this](int index)            {
+                qDebug() << "AppInit:camera type changed:" << mainwindowUi->m_cbx_camera_type->currentText();
+                camera_type = mainwindowUi->m_cbx_camera_type->currentText().toStdString();
+                initCamera();
+            });
+
+
+    mainwindowUi->m_cbx_camera_list->clear();
+    camera_type = mainwindowUi->m_cbx_camera_type->currentText().toStdString();
+
+    // 读取相机列表
+    std::vector <std::string> camera_list;
+    getCameraList(camera_list, camera_type);
+
+
+    if(camera_list.empty()){
         mainwindowUi->m_cbx_camera_list->setEditable(true);
         mainwindowUi->m_cbx_camera_list->setCurrentText("未检测到相机");
         mainwindowUi->m_cbx_camera_list->setDisabled(true);
         mainwindowUi->m_btn_open_camera->setDisabled(true);
-        qDebug() << "AppInit:USB摄像头初始化失败." << "检测到"<< m_cameraList.count() << "个USB摄像头.";
+
+        qDebug() << "AppInit:相机初始化失败." << "检测到"<< 0 << "个相机";
         return;
     }else{
+
         mainwindowUi->m_cbx_camera_list->setEditable(false);
         mainwindowUi->m_cbx_camera_list->setDisabled(false);
         mainwindowUi->m_btn_open_camera->setDisabled(false);
-        m_cameraIndex = mainwindowUi->m_cbx_camera_list->currentIndex();
 
-#ifdef _WIN32
-
-        qDebug() << "Windows";
-#else
-        QByteArray dev_name = m_cameraList[m_cameraIndex].id();
-        m_cameraIndex = findCameraIndex(dev_name);
-#endif
-        //qDebug() << "默认0：" << m_cameraIndex;
-        webCamera = new CUSBCamera(m_cameraIndex);
-        //        appThread = new QThread();
-        //        camera->moveToThread(appThread);
-        //        appThread->start();
-    }
-    qDebug() << "AppInit:USB摄像头初始化完成." << "检测到"<< m_cameraList.count() << "个USB摄像头.";
-}
-
-
-/**
- * @brief Toup摄像头初始化
- * @param
- */
-void AppInit::initToupCamera()
-{
-    mainwindowUi->m_cbx_camera_list->clear();
-    // 显示可用相机
-    ToupcamDeviceV2 arr[TOUPCAM_MAX];
-    unsigned toupCamCount = Toupcam_EnumV2(arr);
-
-    if (0 == toupCamCount){
-        mainwindowUi->m_cbx_camera_list->setEditable(true);
-        mainwindowUi->m_cbx_camera_list->setCurrentText("未检测到相机");
-        mainwindowUi->m_cbx_camera_list->setDisabled(true);
-        mainwindowUi->m_btn_open_camera->setDisabled(true);
-        qDebug() << "AppInit:Toup摄像头初始化失败." << "检测到"<< 0 << "个Toup摄像头.";
-        return;
-    }
-    else
-    {
-        mainwindowUi->m_cbx_camera_list->setEditable(false);
-        mainwindowUi->m_cbx_camera_list->setDisabled(false);
-        mainwindowUi->m_btn_open_camera->setDisabled(false);
-        for (unsigned i = 0; i < toupCamCount; ++i)
-        {
-            //循环每个相机
-#ifdef _WIN32
-            mainwindowUi->m_cbx_camera_list->addItem(QString::fromWCharArray(arr[i].displayname));
-#else
-            mainwindowUi->m_cbx_camera_list->addItem(arr[i].displayname);
-#endif
+        for (const std::string &camera: camera_list) {
+            mainwindowUi->m_cbx_camera_list->addItem(camera.c_str());
         }
-        m_cameraIndex = mainwindowUi->m_cbx_camera_list->currentIndex();
-        qDebug() <<"ToupCame id：" << m_cameraIndex;
-        toupCamera = new CToupCamera(arr[m_cameraIndex]);
-    }
-    qDebug() << "AppInit:Toup摄像头初始化完成." << "检测到"<< toupCamCount << "个Toup摄像头.";
-}
 
+
+        if(camera_type=="USB"){
+#ifdef _WIN32
+            m_cameraIndex = mainwindowUi->m_cbx_camera_list->currentIndex();
+#else
+            QByteArray dev_name = m_cameraList[m_cameraIndex].id();
+            m_cameraIndex = findCameraIndex(dev_name);
+#endif
+        }else{
+
+            m_cameraIndex = mainwindowUi->m_cbx_camera_list->currentIndex();
+        }
+
+
+        // 加载相机
+        camera = CCamera::createInstance(camera_type, m_cameraIndex);
+        qDebug() << "AppInit:相机初始化完成." << "检测到"<< camera_list.capacity() << "个摄像头.";
+
+
+        if(camera == nullptr){
+            qDebug() << "AppInit:相机初始化失败";
+        }
+    }
+}
 
 
 
@@ -236,6 +220,13 @@ void AppInit::initSerialPort()
     qDebug() << "AppInit:串口初始化完成." << "检测到"<< serialPortInfos.count() <<"个串口.";
 
     mainwindowUi->m_cbx_ip_list->addItem("127.0.0.1");
+
+    connect(mainwindowUi->m_cbx_serial_port_list, QOverload<int>::of(&QComboBox::currentIndexChanged), this, [this](int index)
+            {
+                qDebug() << "AppInit:serial port changed:" << mainwindowUi->m_cbx_serial_port_list->currentText();
+                serialPort = new CSerialPort(mainwindowUi->m_cbx_serial_port_list->currentText(), 115200);
+            });
+
 }
 
 
@@ -251,6 +242,27 @@ void AppInit::initWebSocket()
     quint32  port = mainwindowUi->m_line_port->text().toInt();
     webSocket = new CWebSocket(port);
     connect(webSocket,&CWebSocket::sendTextMessage, this, &AppInit::showTextMessage);
+
+    // 当从服务器收到消息时，将触发该信号
+    QObject::connect(webSocket, &CWebSocket::sendBinaryMessage, [this](const QByteArray &message) {
+        // 将收到的二进制数据解析为 JSON 对象
+        QJsonDocument doc = QJsonDocument::fromJson(message);
+        QJsonObject json = doc.object();
+        QStringList keys = json.keys();
+        for(int i = 0; i < keys.size(); i++){
+
+        qDebug() << "key" << i << " is:" << keys.at(i) << json.value(keys.at(i)).toString();
+            if (json.value("type").toString() == "image") {
+                QString base64Image = json.value("data").toString();
+                QByteArray imageData = QByteArray::fromBase64(base64Image.toLatin1());
+                QPixmap pixmap;
+                pixmap.loadFromData(imageData);
+                mainwindowUi->m_lbl_display->setPixmap(pixmap);
+            }
+
+        }
+
+    });
     //检测是否打开
     qDebug() << "AppInit:WebSocket初始化完成.";
 }
@@ -274,9 +286,6 @@ void AppInit::initOnnx()
 {
     yolov8Onnx = new YoloV8Onnx();
 //    yolov8Onnx->tracking()
-    //    //    appThread = new QThread();
-    //    //    nc->moveToThread(appThread);
-    //    //    appThread->start();
     qDebug() << "AppInit:Onnx初始化完成.";
 }
 
@@ -288,9 +297,6 @@ void AppInit::initOnnx()
 void AppInit::initNcnn()
 {
     ncnnYolo = new CNcnn();
-    //    appThread = new QThread();
-    //    nc->moveToThread(appThread);
-    //    appThread->start();
     qDebug() << "AppInit:Ncnn初始化完成.";
 }
 

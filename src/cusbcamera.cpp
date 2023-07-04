@@ -1,70 +1,50 @@
 #include "cusbcamera.h"
-
+#include "QDebug"
 /**
  * @brief CUSBCamera 构造函数
  * @param
  */
-CUSBCamera::CUSBCamera(int camIndex, QObject *parent)
-    : QObject{parent}
-    ,m_camIndex(camIndex)
-
+CUSBCamera::CUSBCamera(int index)
+    :m_index(index)
 {
-    m_cap = new cv::VideoCapture();
-//    qDebug() << "CUSBCamera" <<QThread::currentThreadId() << QThread::currentThread();
+
 }
 
-
-//CUSBCamera::CUSBCamera(std::string camIndex, QObject *parent)
-//    : QObject{parent}
-//    ,m_camIndex(camIndex)
-//{
-//    m_cap = new cv::VideoCapture();
-////    qDebug() << "CUSBCamera" <<QThread::currentThreadId() << QThread::currentThread();
-//}
-
-/**
- * @brief 打开相机
- * @param
- */
-void CUSBCamera::open(){
-    qDebug() << m_camIndex;
-    bool ret = m_cap->open(m_camIndex, cv::CAP_ANY);
-    if(ret)
-    {
-        qDebug() << "CUSBCamera:open success.";
-    }
-    else
-    {
-        m_cap->release();
-        return;
-    }
+CUSBCamera::~CUSBCamera() {
+    // 析构函数
+    close();
 }
 
-/**
- * @brief 读取帧
- * @param
- */
-void CUSBCamera::read(){
-    cv::Mat frame;
-    qDebug() << "CUSBCamera:1.read frame";
-    qDebug() << "CUSBCamera" <<QThread::currentThreadId() << QThread::currentThread();
-    if (m_cap->isOpened())
-    {
-        bool ret = m_cap->read(frame);
-        if(ret)
-        {
-            emit sendFrame(frame);
-        }
-    }
+bool CUSBCamera::isOpened() const {
+    // 检查是否已经打开
+    return m_capture.isOpened();
 }
 
-/**
- * @brief 关闭相机
- * @param
- */
+int CUSBCamera::open() {
+
+    // 打开
+    if (!isOpened()) {
+        m_capture.open(m_index);
+        qDebug() <<"CUSBCamera:打开成功！";
+    }
+    return isOpened();
+}
+
 void CUSBCamera::close(){
-    if(m_cap->isOpened()){
-        m_cap->release();
-        qDebug() << "CUSBCamera:close success.";
+    // 关闭
+    if (isOpened()) {
+        m_capture.release();
     }
 }
+
+bool CUSBCamera::read(cv::Mat& frame) {
+    // 读取帧
+    if (isOpened()) {
+        return m_capture.read(frame);
+    }
+    return false;
+}
+
+
+
+

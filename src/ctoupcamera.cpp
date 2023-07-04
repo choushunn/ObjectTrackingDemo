@@ -1,155 +1,107 @@
 #include "ctoupcamera.h"
-
+#include <QString>
 
 /**
  * @brief CToupCamera 构造函数
  * @param
  */
-CToupCamera::CToupCamera(ToupcamDeviceV2 cur, QObject *parent)
-    : QObject{parent}
-    ,m_cur(cur)
+CToupCamera::CToupCamera(int index)
+    :m_index(index)
 {
-    qDebug() << "cur.id" <<cur.id ;
-    //全局事件响应
-    connect(this, &CToupCamera::evtCallback, this, [this](unsigned nEvent)
-    {
-        //todo:
-        //热插拔设备检测
-        qDebug() << "handleEvent" << nEvent;
-        //运行时事件
-        if (m_hcam)
-        {
-            if (TOUPCAM_EVENT_IMAGE == nEvent)
-            {
-                //读取图像
-                //read();
-            }
-            else if(TOUPCAM_EVENT_EXPOSURE == nEvent)
-            {
-                //曝光事件
-            }
-            else if (TOUPCAM_EVENT_TEMPTINT == nEvent)
-            {
-                //handleTempTintEvent();
-            }
-            else if (TOUPCAM_EVENT_STILLIMAGE == nEvent)
-            {
-                //handleStillImageEvent();
-            }
-            else if (TOUPCAM_EVENT_ERROR == nEvent)
-            {
-                close();
+    Toupcam_EnumV2(m_arr);
+}
 
-            }
-            else if (TOUPCAM_EVENT_DISCONNECTED == nEvent)
-            {
-                close();
+CToupCamera::~CToupCamera() {
+    // 析构函数
+    close();
+}
 
-            }
-            else
-            {
+bool CToupCamera::isOpened() const {
+    // 检查是否已经打开
+    if(m_hcam){
+        return true;
+    }
+    else{
+        return false;
+    }
+}
 
+
+int CToupCamera::open() {
+    // 打开
+    if (!isOpened()) {
+        m_hcam = Toupcam_Open(m_arr[m_index].id);
+        if (m_hcam) {
+            Toupcam_get_eSize(m_hcam, (unsigned *) &m_res);
+            m_imgWidth = m_arr[m_index].model->res[m_res].width;
+            m_imgHeight = m_arr[m_index].model->res[m_res].height;
+            //初始化Toup设置
+            //1:BGR,2:RGB,Qimage use RGB byte order
+            Toupcam_put_Option(m_hcam, TOUPCAM_OPTION_BYTEORDER, 0);
+            //自动曝光 0:不启用,1:连续模式,2:单次模式
+            Toupcam_put_AutoExpoEnable(m_hcam, 1);
+            if (m_pData) {
+                delete[] m_pData;
+                m_pData = nullptr;
+            }
+            //启动相机
+            if (SUCCEEDED(Toupcam_StartPullModeWithCallback(m_hcam, eventCallBack, this))) {
+                qDebug() << "CToupCam:打开成功.";
+                m_pData = new unsigned char[TDIBWIDTHBYTES(m_imgWidth * 24) * m_imgHeight];
+                pInfo = new ToupcamFrameInfoV2();
+                return 200;
+            } else {
+                this->close();
+                qDebug() << "CToupCam:打开失败，拉取图像失败。";
+                return 404;
             }
         }
-    });
-
-}
-
-/**
- * @brief 暂停Toup相机
- * @param
- */
-void CToupCamera::pause()
-{
-    if (m_hcam)
-    {
-        //0:继续,1:暂停
-        Toupcam_Pause(m_hcam, 0);
     }
+    return isOpened();
 }
 
-
-/**
- * @brief 关闭Toup相机
- * @param
- */
-void CToupCamera::close()
-{
-    if (m_hcam)
-    {
+void CToupCamera::close(){
+    // 关闭
+    if (isOpened()) {
         Toupcam_Close(m_hcam);
         m_hcam = nullptr;
-    }
-    delete[] m_pData;
-    m_pData = nullptr;
-}
-
-
-/**
- * @brief 事件调用
- * @param
- */
-void CToupCamera::eventCallBack(unsigned nEvent, void* pCallbackCtx)
-{
-    CToupCamera* pThis = reinterpret_cast<CToupCamera*>(pCallbackCtx);
-    emit pThis->evtCallback(nEvent);
-}
-
-
-/**
- * @brief 打开Toup相机
- * @param
- */
-void CToupCamera::open(){
-    m_hcam = Toupcam_Open(m_cur.id);
-    if (m_hcam)
-    {
-        Toupcam_get_eSize(m_hcam, (unsigned*)&m_res);
-        m_imgWidth = m_cur.model->res[m_res].width;
-        m_imgHeight = m_cur.model->res[m_res].height;
-        //初始化Toup设置
-        //1:BGR,2:RGB,Qimage use RGB byte order
-        Toupcam_put_Option(m_hcam, TOUPCAM_OPTION_BYTEORDER, 0);
-        //自动曝光 0:不启用,1:连续模式,2:单次模式
-        Toupcam_put_AutoExpoEnable(m_hcam, 1);
-        if (m_pData)
-        {
+        if (m_pData) {
             delete[] m_pData;
             m_pData = nullptr;
         }
-
-        //启动相机
-        if (SUCCEEDED(Toupcam_StartPullModeWithCallback(m_hcam, eventCallBack, this)))
-        {
-            m_pData = new uchar[TDIBWIDTHBYTES(m_imgWidth * 24) * m_imgHeight];
-            pInfo = new ToupcamFrameInfoV2();
-            qDebug()<<"CToupCamera:ToupCam打开成功.";
-        }
-        else
-        {
-            qDebug() << "CToupCamera:ToupCam打开失败，拉取图像失败。";
-            close();
-        }
+        qDebug() << "CToupCam:关闭相机成功.";
     }
 }
 
+bool CToupCamera::read(cv::Mat& frame) {
+    // 读取帧
+    if (isOpened()) {
+        HRESULT hr = Toupcam_PullImageV2(m_hcam, m_pData, 24, pInfo);
+        if (SUCCEEDED(hr)) {
+            qDebug() << "CToupCam:读取图像成功。" << pInfo->width << "x" << pInfo->height;
+            // 将图像数据和大小信息存储到 Mat 对象中
+            cv::Mat image(m_imgHeight, m_imgWidth, CV_8UC3, m_pData);
+            frame = image.clone();
+            // 将图像数据和大小信息存储到 ImageData 对象中
+            // image.data = m_pData;
+            // image.width = m_imgWidth;
+            // image.height = m_imgHeight;
+            return true;
+        }
+        qDebug() << "CToupCam:读取图像失败。" << FAILED(hr);
+    }
+    return false;
+}
 
 /**
- * @brief 读取图像
+ * @brief 回调函数
  * @param
  */
-void CToupCamera::read()
-{
-    HRESULT hr = Toupcam_PullImageV2(m_hcam, m_pData, 24, pInfo);
-    if(SUCCEEDED(hr)){
-        QImage image(m_pData, pInfo->width, pInfo->height, QImage::Format_RGB888);
-        emit sendImage(image);
-        //        emit sendImage(image);
-        qDebug() << "ToupCam读取图像成功。";
-        //        cv::Mat frame(pInfo->height, pInfo->width, CV_8UC3, m_pData);
-        //        emit sendFrame(frame);
-    }else{
-        qDebug() << "ToupCam读取图像失败。";
+void __stdcall CToupCamera::eventCallBack(unsigned nEvent, void *pCallbackCtx) {
+    if (TOUPCAM_EVENT_IMAGE == nEvent) {
+        qDebug() << "CToupCam:handleEvent:pull image ok" << nEvent;
+    } else {
+        qDebug() << "CToupCam:handleEvent" << nEvent;
     }
 }
 

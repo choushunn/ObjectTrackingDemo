@@ -12,7 +12,7 @@ public:
     explicit CWebSocket(quint16 port, bool debug = false, QObject *parent = nullptr);
     void     startListen();
 
-private:
+public:
     QWebSocketServer    *m_webSocketServer;
     QString             m_serverName = "WebSocketServer";
     QList<QWebSocket *> m_clients;

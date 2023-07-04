@@ -1,7 +1,7 @@
 #include "mainwindow.h"
 #include "./ui_mainwindow.h"
 
-
+#include <QHostAddress>
 /**
  * @brief 构造函数
  * @param
@@ -13,20 +13,75 @@ MainWindow::MainWindow(QWidget *parent)
     ui->setupUi(this);
     this->setWindowIcon(QIcon(":/img/logo.ico"));
     appInit  = new AppInit(ui);
-    appEvent = new AppEvent(this);
-    //appEvent线程
-    //    appEventThread = new QThread();
-    //    appEvent->moveToThread(appEventThread);
-    //    appEventThread->start();
+//    appEvent = new AppEvent(this);
     m_timer  = new QTimer();
     m_searchTimer = new QTimer();
     m_searchTimer->setInterval(120);
     connect(m_searchTimer, &QTimer::timeout, this, &MainWindow::on_timeoutSearch);
+
     qDebug() << "MainWindow" <<QThread::currentThreadId() << QThread::currentThread();
     ui->tabWidget->setVisible(false);
-
     ui->pushButton_2->raise();
+
+
+    // 注册事件
+    appEvent->registerEvent("myEvent", this);
+
+    // 连接按钮的点击事件信号到Lambda表达式
+    connect(ui->pushButton_4, &QPushButton::clicked, [=]() {
+        // 发送事件到AppEvent
+        QVariantList args;
+        args << "Event received!";
+        AppEvent::instance()->sendEvent("myEvent", args);
+    });
+
+    // 监听"myEvent"事件
+    QObject::connect(appEvent, &AppEvent::myEvent, this, [=](const QVariantList& args) {
+        // 处理事件
+        statusBar()->showMessage(args[0].toString());
+    });
+
+
+    // 监听"myEvent"事件
+    connect(AppEvent::instance(), SIGNAL(myEvent(QVariantList)), this, SLOT(onMyEventReceived(QVariantList)));
+
 }
+
+void MainWindow::onMyEventReceived(const QVariantList& args)
+{
+    // 处理事件
+    QString message = args[0].toString();
+
+    statusBar()->showMessage(args[0].toString());
+}
+
+
+//读取图像槽函数
+void MainWindow::readFrame() {
+    cv::Mat image;
+    appInit->camera->read(image);
+    if (!image.empty()) {
+        emit sendFrame(image);
+//        this->showResultFrame(image);
+    }
+}
+
+
+/**
+* @brief 显示frame
+* @param frame
+*/
+void MainWindow::showResultFrame(cv::Mat frame) {
+    cv::resize(frame, frame, cv::Size(640, 480));
+    QSize size = ui->m_lbl_display->size();
+    QImage qimage1(frame.data, frame.cols, frame.rows, QImage::Format_RGB888);
+    QPixmap pixmap1 = QPixmap::fromImage(qimage1);
+    pixmap1 = pixmap1.scaled(size, Qt::KeepAspectRatio);
+    ui->m_lbl_display->setPixmap(pixmap1);
+    cv::Mat output_image = frame.clone();
+}
+
+
 
 /**
  * @brief 打开相机信号槽
@@ -37,54 +92,30 @@ void MainWindow::on_m_btn_open_camera_clicked(bool checked)
     if(checked){
         ui->m_btn_open_camera->setText("关闭");
         //1s读10帧
-        //        fps = ui->lineEdit_FPS->text().toInt();
+        fps = ui->lineEdit_FPS->text().toInt();
         m_timer->setInterval(int(1000/fps));
 
-        connect(appInit->ncnnYolo, &CNcnn::sendDectectImage, this, &::MainWindow::showFrame);
-//        connect(appInit->yolov8Onnx, &YoloV8Onnx::sendDectectImage, this, &::MainWindow::showFrame);
-        connect(appInit->yolov8Onnx, &YoloV8Onnx::sendDectectImage, this, &::MainWindow::showFrameServo);
-//        connect(appInit->toupCamera, &CToupCamera::sendImage, this, &::MainWindow::showFrame);
-//        connect(appInit->toupCamera, &CToupCamera::sendFrame, this, &::MainWindow::showFrame);
-        if(ui->m_cbx_camera_type->currentText() == "USB"){
-            appInit->webCamera->open();
-
+            appInit->camera->open();
             appInit->yolov8Onnx->initTracker();
             m_timer->start();
             //读取帧
-            connect(m_timer, &QTimer::timeout, appInit->webCamera, &CUSBCamera::read);
+//            connect(m_timer, &QTimer::timeout, appInit->camera, &CCamera::read);
+            connect(m_timer, &QTimer::timeout, this, &MainWindow::readFrame);
             //处理帧
             //            connect(appInit->webCamera, &CUSBCamera::sendFrame, appEvent, &AppEvent::processFrame);
-//            connect(appInit->webCamera, &CUSBCamera::sendFrame, appInit->ncnnYolo, &CNcnn::detect);
-            connect(appInit->webCamera, &CUSBCamera::sendFrame, appInit->yolov8Onnx, &YoloV8Onnx::tracking);
+            connect(this, &MainWindow::sendFrame, appInit->ncnnYolo, &CNcnn::detect);
+//            connect(this, &MainWindow::sendFrame, appInit->yolov8Onnx, &YoloV8Onnx::tracking);
             //显示帧
-            //            connect(appEvent, &AppEvent::sendProcessFrame, this, &MainWindow::showFrame);
-        }
-        else if(ui->m_cbx_camera_type->currentText() == "TOUP")
-        {
-            //打开摄像头,判断是否打开成功
-            appInit->toupCamera->open();
-
-            m_timer->start();
-            //读取帧
-            connect(m_timer, &QTimer::timeout, appInit->toupCamera, &CToupCamera::read);
-            //处理帧
-            //            connect(appInit->toupCamera, &CToupCamera::sendFrame, appInit->ncnnYolo, &CNcnn::detect);
-            //显示帧
-            connect(appInit->toupCamera, &CToupCamera::sendImage, this, &::MainWindow::showFrame);
-        }
+            connect(appInit->ncnnYolo, &CNcnn::sendDectectImage, this, &::MainWindow::showFrame);
+            connect(appInit->yolov8Onnx, &YoloV8Onnx::sendDectectImage, this, &::MainWindow::showFrameServo);
         ui->m_cbx_camera_list->setDisabled(true);
         ui->m_cbx_camera_type->setDisabled(true);
     }
     else
     {
-        if(ui->m_cbx_camera_type->currentText()=="USB"){
-            m_timer->stop();
-            appInit->webCamera->close();
-        }else if(ui->m_cbx_camera_type->currentText()=="TOUP")
-        {
-            appInit->toupCamera->close();
-        }
 
+        m_timer->stop();
+        appInit->camera->close();
         appInit->yolov8Onnx->deleteTracker();
         ui->m_btn_open_camera->setText("打开");
         ui->m_lbl_display->clear();
@@ -358,5 +389,11 @@ void MainWindow::on_pushButton_2_clicked()
     }else{
         ui->tabWidget->setVisible(true);
     }
+}
+
+
+void MainWindow::on_pushButton_3_clicked()
+{
+
 }
 

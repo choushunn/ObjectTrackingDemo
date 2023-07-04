@@ -6,11 +6,11 @@
 #include <QCamera>
 #include <QSerialPort>
 #include <QSerialPortInfo>
+#include <toupcam.h>
 #include "ui_mainwindow.h"
 #include "cwebsocket.h"
-#include "cusbcamera.h"
 #include "cserialport.h"
-#include "ctoupcamera.h"
+#include "ccamera.h"
 #include "cncnn.h"
 #include "yolov8onnx.h"
 #include "utils.h"
@@ -25,8 +25,7 @@ class AppInit : public QMainWindow
 public:
     AppInit();
     explicit AppInit(Ui::MainWindow *ui);
-    CUSBCamera*     webCamera  = nullptr;
-    CToupCamera*    toupCamera = nullptr;
+    CCamera*     camera  = nullptr;
     CWebSocket*     webSocket  = nullptr;
     CSerialPort*    serialPort = nullptr;
     CNcnn*          ncnnYolo   = nullptr;
@@ -34,10 +33,12 @@ public:
     QThread*        appThread  = nullptr;
     YoloV8Onnx*     yolov8Onnx = nullptr;
 
+
 private:
     Ui::MainWindow       *mainwindowUi;
     QList<QCameraDevice> m_cameraList;
-    int m_cameraIndex;
+    int m_cameraIndex = 0;
+    std::string camera_type = "USB";
 
 public:
     void initWebSocket();
@@ -45,7 +46,7 @@ public:
 private:
     void initMainWindowUI();
     void initCamera();
-    void initToupCamera();
+//    void initToupCamera();
     void initSerialPort();
 
     void initOnnx();

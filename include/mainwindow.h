@@ -26,17 +26,19 @@ public:
 
 private:
     AppInit*    appInit;
-    AppEvent*   appEvent;
+    AppEvent*   appEvent = AppEvent::instance();
     QThread*    appThread;
     QTimer*     m_timer = nullptr;
     QTimer*     m_searchTimer = nullptr;
-    int         fps = 1;
+    int         fps = 10;
     int m_servo_x = 135;
     int m_servo_y = 135;
     int m_count_no_objects = 0;
     QPropertyAnimation *m_propertyAnimation;
     QPropertyAnimation *m_propertyAnimation2;
+    void showResultFrame(cv::Mat frame) ;
     bool m_bSideflag = false;
+    void readFrame() ;
 private slots:
     void on_m_btn_open_camera_clicked(bool checked);
     void on_m_btn_open_serial_port_clicked(bool checked);
@@ -56,5 +58,9 @@ private slots:
     void on_action_5_triggered();
     void on_action_triggered();
     void on_pushButton_2_clicked();
+    void on_pushButton_3_clicked();
+    void onMyEventReceived(const QVariantList& args);
+signals:
+              void sendFrame(cv::Mat frame);
 };
 #endif // MAINWINDOW_H
